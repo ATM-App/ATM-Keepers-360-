@@ -204,7 +204,7 @@
             <form id="loginForm">
                 <div class="form-group">
                     <label>Email</label>
-                    <input type="email" id="loginEmail" placeholder="admin@admin.com" required>
+                    <input type="email" id="loginEmail" placeholder="usuario@email.com" required>
                 </div>
                 <div class="form-group">
                     <label>Contraseña</label>
@@ -377,7 +377,7 @@
     
     <script>
         // ==================== VARIABLES GLOBALES ====================
-        window.isDragging = false; // Flag para prevenir click tras soltar drag
+        window.isDragging = false; 
         let currentUser = null, currentUserData = null, currentFolderId = null;
         let usersData = [], sessionsData = [], foldersData = [];
         let deletingId = null, deletingType = null, editingUserId = null;
@@ -426,10 +426,10 @@
                                 document.getElementById('adminLink').style.display = currentUserData.role === 'admin' ? 'flex' : 'none';
                                 renderSidebar(); setupDataListeners(); showPage('dashboard');
                             } else {
-                                const username = user.email.split('@')[0];
-                                db.collection('users').doc(user.uid).set({
-                                    email: user.email, username: username, fullName: username, role: 'admin', active: true, createdAt: new Date().toISOString()
-                                });
+                                // Si existe en auth pero no en firestore, lo sacamos
+                                auth.signOut();
+                                showToast('Usuario no registrado en el sistema', 'error');
+                                setScreen('loginPage');
                             }
                         }, error => { console.error(error); setScreen('loginPage'); });
                     } catch (e) { console.error(e); setScreen('loginPage'); }
@@ -439,6 +439,7 @@
             });
         }
 
+        // SEGURIDAD PARCHEADA: Ya no se auto-crean cuentas desde el login
         document.getElementById('loginForm').onsubmit = async e => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -450,20 +451,8 @@
             try {
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
-                const errStr = JSON.stringify(error).toLowerCase() + " " + String(error.message).toLowerCase();
-                if (errStr.includes('invalid') || errStr.includes('not-found') || errStr.includes('credential')) {
-                    try {
-                        showToast('Creando cuenta de administrador...', 'info');
-                        await auth.createUserWithEmailAndPassword(email, password);
-                    } catch (createErr) {
-                        const createStr = String(createErr.message).toLowerCase();
-                        errDiv.style.display = 'block';
-                        errDiv.innerHTML = createStr.includes('in-use') ? 'Contraseña incorrecta.' : 
-                            (createStr.includes('not-allowed') ? '<b>Error:</b> Habilita "Correo/Contraseña" en Firebase.' : createErr.message);
-                    }
-                } else {
-                    errDiv.style.display = 'block'; errDiv.textContent = 'Error: ' + error.message;
-                }
+                errDiv.style.display = 'block'; 
+                errDiv.textContent = 'Email o contraseña incorrectos.';
             } finally {
                 btn.disabled = false; btn.textContent = 'Iniciar Sesión';
             }
@@ -499,12 +488,10 @@
         }
 
         // ==================== DRAG AND DROP (ORDENAR CARPETAS) ====================
-        let draggedFolderId = null;
         function dragStart(e, id) { 
             window.isDragging = true;
             draggedFolderId = id; 
             e.dataTransfer.effectAllowed = 'move'; 
-            // setData es OBLIGATORIO para que el navegador inicie el arrastre visualmente
             e.dataTransfer.setData('text/plain', id); 
         }
         function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
@@ -542,7 +529,6 @@
             if (s && s.pdfData) {
                 const link = document.createElement('a');
                 link.href = s.pdfData; 
-                // Usamos el nombre original, si no existe, usamos el título
                 link.download = s.originalName || (s.title.replace(/ /g, '_') + '.pdf');
                 document.body.appendChild(link);
                 link.click();
@@ -610,7 +596,6 @@
                 visibleFolders.forEach(f => {
                     const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
                     const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
-                    // Eventos de Drag & Drop para ordenar
                     const dragProps = currentUserData?.role === 'admin' ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="setTimeout(()=>window.isDragging=false, 100)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
                     
                     html += `
@@ -655,7 +640,7 @@
             }
         }
 
-        // ==================== FORMULARIOS (CARPETAS Y SUBIDA MODERNA) ====================
+        // ==================== FORMULARIOS CARPETAS Y SUBIDA ====================
         function openFolderModal() {
             document.getElementById('folderForm').reset();
             document.getElementById('folderParentId').value = currentFolderId || '';
@@ -744,7 +729,7 @@
                 reader.onload = () => {
                     db.collection('sessions').add({
                         title: document.getElementById('upTitle').value, folderId: document.getElementById('upFolder').value,
-                        originalName: file.name, // Guardado para la descarga
+                        originalName: file.name, // GUARDAR NOMBRE ORIGINAL
                         pdfData: reader.result, uploadDate: new Date().toISOString(), uploadedBy: currentUser.uid
                     }).then(() => { showToast('Sesión guardada', 'success'); showPage('dashboard'); });
                 };
@@ -762,7 +747,7 @@
         }
 
         function clearFile(e) {
-            e.preventDefault(); // Prevenir que el click abra la ventana de archivos
+            e.preventDefault(); 
             document.getElementById('upFile').value = '';
             document.getElementById('dropzoneContent').style.display = 'block';
             document.getElementById('fileInfo').style.display = 'none';
@@ -898,19 +883,44 @@
 
         function editUser(id) { openUserModal(id); }
 
+        // CREAR USUARIOS DESDE LA APP SIN DESLOGUEAR AL ADMIN
         document.getElementById('userForm').onsubmit = async e => {
             e.preventDefault();
             const btn = document.getElementById('saveUserBtn'); btn.disabled = true;
-            const data = { fullName: document.getElementById('userFullName').value, username: document.getElementById('userUsername').value, role: document.getElementById('userRole').value, profileImage: document.getElementById('profileImageData').value || null };
+            
+            const email = document.getElementById('userEmail').value;
+            const pass = document.getElementById('userPassword').value;
+            
+            const data = { 
+                fullName: document.getElementById('userFullName').value, 
+                username: document.getElementById('userUsername').value, 
+                role: document.getElementById('userRole').value, 
+                profileImage: document.getElementById('profileImageData').value || null 
+            };
             
             try {
                 if (editingUserId) {
-                    const np = document.getElementById('userNewPassword').value; if (np) { data.tempPassword = np; data.passwordResetRequired = true; }
-                    await db.collection('users').doc(editingUserId).update(data); showToast('Usuario actualizado', 'success');
+                    const np = document.getElementById('userNewPassword').value; 
+                    if (np) { data.tempPassword = np; data.passwordResetRequired = true; }
+                    await db.collection('users').doc(editingUserId).update(data); 
+                    showToast('Usuario actualizado', 'success');
                 } else {
-                    showToast('Firebase bloquea crear cuentas aquí en local. Hazlo en tu consola de Google.', 'info');
+                    const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
+                    const secAuth = firebase.auth(secondaryApp);
+                    const cred = await secAuth.createUserWithEmailAndPassword(email, pass);
+                    
+                    data.email = email;
+                    data.active = true;
+                    data.createdAt = new Date().toISOString();
+                    
+                    await db.collection('users').doc(cred.user.uid).set(data);
+                    await secAuth.signOut();
+                    secondaryApp.delete();
+                    showToast('Usuario creado correctamente', 'success');
                 }
                 closeModal('userModal');
+            } catch(err) {
+                showToast('Error: ' + err.message, 'error');
             } finally { btn.disabled = false; }
         };
 
@@ -933,7 +943,7 @@
             closeModal('deleteModal'); showToast('Eliminado', 'success');
         };
 
-        // INICIALIZACIÓN
+        // INICIALIZACIÓN SEGURA
         document.addEventListener('DOMContentLoaded', () => {
             try { initFirebase(); setupAuthListener(); } 
             catch (e) { console.error(e); alert("Error al iniciar: " + e.message); }
