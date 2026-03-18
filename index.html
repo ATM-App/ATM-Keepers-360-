@@ -82,24 +82,23 @@
         .menu-toggle { display: none; background: none; border: none; padding: 0.5rem; cursor: pointer; }
         .content-area { flex: 1; padding: 2rem; background: var(--gray-100); }
         
-        /* Breadcrumbs */
+        /* Navegación y Carpetas */
         .breadcrumbs { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.95rem; font-weight: 500; flex-wrap: wrap; }
         .breadcrumb-item { color: var(--atm-red); cursor: pointer; padding: 0.35rem 0.75rem; border-radius: var(--radius); transition: 0.2s; background: rgba(203, 53, 36, 0.05); }
         .breadcrumb-item:hover { background: rgba(203, 53, 36, 0.15); }
         .breadcrumb-separator { color: var(--gray-400); font-size: 1.1rem; }
         
-        /* Folders & Drag Drop */
         .folders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
         .folder-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
         .folder-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--atm-red); }
         .folder-icon { width: 32px; height: 32px; color: var(--atm-blue); }
         .folder-name { font-weight: 600; font-size: 1.05rem; flex: 1; }
         
+        /* Indicadores Drag & Drop */
         .folder-card[draggable="true"] { cursor: grab; }
         .folder-card[draggable="true"]:active { cursor: grabbing; }
-        .folder-card.drag-over { border-left: 4px solid var(--atm-red); opacity: 0.7; }
+        .folder-card.drag-over { border-left: 4px dashed var(--atm-red); opacity: 0.8; }
 
-        /* Sessions */
         .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
         .session-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
         .session-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
@@ -197,7 +196,7 @@
     <div class="login-container screen" id="loginPage">
         <div class="login-card">
             <div class="login-header">
-                <img src="escudo.png" alt="ATM" class="logo-escudo">
+                <img src="escudo.png" alt="ATM" class="logo-escudo" onerror="this.outerHTML='<div style=\'width:120px;height:120px;border-radius:12px;background:var(--atm-red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;\'><span style=\'font-size:48px;font-weight:bold;color:white;\'>ATM</span></div>'">
                 <h1>AtletiKeepers Pro</h1>
                 <p class="subtitle">Plataforma de Entrenadores de Porteros</p>
             </div>
@@ -377,7 +376,7 @@
     
     <script>
         // ==================== VARIABLES GLOBALES ====================
-        window.isDragging = false; 
+        let isDraggingOperation = false; // Bloqueo seguro para clics
         let currentUser = null, currentUserData = null, currentFolderId = null;
         let usersData = [], sessionsData = [], foldersData = [];
         let deletingId = null, deletingType = null, editingUserId = null;
@@ -426,7 +425,6 @@
                                 document.getElementById('adminLink').style.display = currentUserData.role === 'admin' ? 'flex' : 'none';
                                 renderSidebar(); setupDataListeners(); showPage('dashboard');
                             } else {
-                                // Si existe en auth pero no en firestore, lo sacamos
                                 auth.signOut();
                                 showToast('Usuario no registrado en el sistema', 'error');
                                 setScreen('loginPage');
@@ -439,7 +437,7 @@
             });
         }
 
-        // SEGURIDAD PARCHEADA: Ya no se auto-crean cuentas desde el login
+        // Login SIN Auto-Creación
         document.getElementById('loginForm').onsubmit = async e => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -488,17 +486,23 @@
         }
 
         // ==================== DRAG AND DROP (ORDENAR CARPETAS) ====================
+        let draggedFolderId = null;
         function dragStart(e, id) { 
-            window.isDragging = true;
+            isDraggingOperation = true;
             draggedFolderId = id; 
             e.dataTransfer.effectAllowed = 'move'; 
             e.dataTransfer.setData('text/plain', id); 
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        }
+        function dragEnd(e) {
+            e.target.style.opacity = '1';
+            setTimeout(() => { isDraggingOperation = false; }, 100);
         }
         function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
         function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+        
         async function drop(e, targetId) {
-            e.preventDefault(); 
-            e.stopPropagation();
+            e.preventDefault(); e.stopPropagation();
             e.currentTarget.classList.remove('drag-over');
             
             if (!draggedFolderId || draggedFolderId === targetId) return;
@@ -518,9 +522,7 @@
             try { 
                 await batch.commit(); 
                 showToast('Carpetas ordenadas', 'success'); 
-            } catch(err) { 
-                showToast('Error al ordenar', 'error'); 
-            }
+            } catch(err) { showToast('Error al ordenar', 'error'); }
         }
 
         // ==================== DESCARGAR PDF ====================
@@ -572,6 +574,13 @@
             document.getElementById('userRoleDisplay').textContent = currentUserData.role === 'admin' ? 'Administrador' : 'Entrenador';
         }
 
+        // Función segura para entrar a la carpeta sin activar drag
+        function navigateToFolder(id) { 
+            if (isDraggingOperation) return;
+            currentFolderId = id; 
+            renderDashboard(); 
+        }
+
         function renderDashboard() {
             const container = document.getElementById('contentArea');
             
@@ -589,19 +598,22 @@
             const visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId);
 
             if (visibleFolders.length > 0) {
+                // Solo muestra el texto si es ADMIN
                 if (currentUserData?.role === 'admin') {
                     html += `<p style="font-size:0.85rem; color:var(--gray-500); margin-bottom: 1rem;">💡 Puedes arrastrar y soltar las carpetas para cambiar su orden.</p>`;
                 }
+                
                 html += `<div class="folders-grid">`;
                 visibleFolders.forEach(f => {
                     const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
                     const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
-                    const dragProps = currentUserData?.role === 'admin' ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="setTimeout(()=>window.isDragging=false, 100)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
+                    
+                    const dragProps = currentUserData?.role === 'admin' ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="dragEnd(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
                     
                     html += `
-                    <div class="folder-card" onclick="if(!window.isDragging) navigateToFolder('${f.id}')" ${dragProps}>
+                    <div class="folder-card" onclick="navigateToFolder('${f.id}')" ${dragProps}>
                         <div class="folder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
-                        <div style="flex:1">
+                        <div style="flex:1; pointer-events: none;">
                             <div class="folder-name">${escapeHtml(f.name)}</div>
                             <div style="font-size:0.8rem; color:var(--gray-500); margin-top:0.2rem;">${subCount} subcarpetas • ${sessCount} PDFs</div>
                         </div>
@@ -729,7 +741,7 @@
                 reader.onload = () => {
                     db.collection('sessions').add({
                         title: document.getElementById('upTitle').value, folderId: document.getElementById('upFolder').value,
-                        originalName: file.name, // GUARDAR NOMBRE ORIGINAL
+                        originalName: file.name, // GUARDADO PARA DESCARGAR CON EL NOMBRE REAL
                         pdfData: reader.result, uploadDate: new Date().toISOString(), uploadedBy: currentUser.uid
                     }).then(() => { showToast('Sesión guardada', 'success'); showPage('dashboard'); });
                 };
@@ -883,45 +895,29 @@
 
         function editUser(id) { openUserModal(id); }
 
-        // CREAR USUARIOS DESDE LA APP SIN DESLOGUEAR AL ADMIN
         document.getElementById('userForm').onsubmit = async e => {
             e.preventDefault();
             const btn = document.getElementById('saveUserBtn'); btn.disabled = true;
-            
             const email = document.getElementById('userEmail').value;
             const pass = document.getElementById('userPassword').value;
             
-            const data = { 
-                fullName: document.getElementById('userFullName').value, 
-                username: document.getElementById('userUsername').value, 
-                role: document.getElementById('userRole').value, 
-                profileImage: document.getElementById('profileImageData').value || null 
-            };
+            const data = { fullName: document.getElementById('userFullName').value, username: document.getElementById('userUsername').value, role: document.getElementById('userRole').value, profileImage: document.getElementById('profileImageData').value || null };
             
             try {
                 if (editingUserId) {
-                    const np = document.getElementById('userNewPassword').value; 
-                    if (np) { data.tempPassword = np; data.passwordResetRequired = true; }
-                    await db.collection('users').doc(editingUserId).update(data); 
-                    showToast('Usuario actualizado', 'success');
+                    const np = document.getElementById('userNewPassword').value; if (np) { data.tempPassword = np; data.passwordResetRequired = true; }
+                    await db.collection('users').doc(editingUserId).update(data); showToast('Usuario actualizado', 'success');
                 } else {
                     const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
                     const secAuth = firebase.auth(secondaryApp);
                     const cred = await secAuth.createUserWithEmailAndPassword(email, pass);
-                    
-                    data.email = email;
-                    data.active = true;
-                    data.createdAt = new Date().toISOString();
-                    
+                    data.email = email; data.active = true; data.createdAt = new Date().toISOString();
                     await db.collection('users').doc(cred.user.uid).set(data);
-                    await secAuth.signOut();
-                    secondaryApp.delete();
+                    await secAuth.signOut(); secondaryApp.delete();
                     showToast('Usuario creado correctamente', 'success');
                 }
                 closeModal('userModal');
-            } catch(err) {
-                showToast('Error: ' + err.message, 'error');
-            } finally { btn.disabled = false; }
+            } catch(err) { showToast('Error: ' + err.message, 'error'); } finally { btn.disabled = false; }
         };
 
         function showChangeTrainerModal(id) {
