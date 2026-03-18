@@ -50,6 +50,7 @@
         .btn-secondary { background: var(--white); color: var(--gray-700); border: 1px solid var(--gray-300); }
         .btn-secondary:hover { background: var(--gray-100); }
         .btn-block { width: 100%; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
         .error-message { background: rgba(239, 68, 68, 0.1); border: 1px solid var(--atm-red); color: var(--atm-red); padding: 0.75rem 1rem; border-radius: var(--radius); font-size: 0.9rem; margin-top: 1rem; display: none; }
         
         /* App Layout */
@@ -81,23 +82,24 @@
         .menu-toggle { display: none; background: none; border: none; padding: 0.5rem; cursor: pointer; }
         .content-area { flex: 1; padding: 2rem; background: var(--gray-100); }
         
-        /* Breadcrumbs y Drag & Drop */
+        /* Breadcrumbs */
         .breadcrumbs { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.95rem; font-weight: 500; flex-wrap: wrap; }
         .breadcrumb-item { color: var(--atm-red); cursor: pointer; padding: 0.35rem 0.75rem; border-radius: var(--radius); transition: 0.2s; background: rgba(203, 53, 36, 0.05); }
         .breadcrumb-item:hover { background: rgba(203, 53, 36, 0.15); }
         .breadcrumb-separator { color: var(--gray-400); font-size: 1.1rem; }
         
+        /* Folders & Drag Drop */
         .folders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
         .folder-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: 0.3s; border: 1px solid transparent; }
         .folder-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--atm-red); }
         .folder-icon { width: 32px; height: 32px; color: var(--atm-blue); }
         .folder-name { font-weight: 600; font-size: 1.05rem; flex: 1; }
         
-        /* Indicadores Drag & Drop */
         .folder-card[draggable="true"] { cursor: grab; }
         .folder-card[draggable="true"]:active { cursor: grabbing; }
         .folder-card.drag-over { border-left: 4px solid var(--atm-red); opacity: 0.7; }
 
+        /* Sessions */
         .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
         .session-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
         .session-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
@@ -107,6 +109,23 @@
         .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.375rem; word-break: break-word; }
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.75rem; }
+        
+        /* Modern Upload Design */
+        .upload-container { max-width: 600px; margin: 0 auto; background: var(--white); padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow); }
+        .dropzone { position: relative; border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center; transition: 0.3s; background: var(--gray-50); margin-bottom: 1rem; }
+        .dropzone:hover { border-color: var(--atm-red); background: var(--white); }
+        .dropzone input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; z-index: 2; }
+        .dropzone-icon { width: 56px; height: 56px; color: var(--gray-400); margin-bottom: 1rem; }
+        .dropzone-text { font-size: 1.1rem; font-weight: 500; color: var(--gray-700); margin-bottom: 0.375rem; }
+        .dropzone-subtext { font-size: 0.9rem; color: var(--gray-500); }
+        
+        .file-info { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--white); border-radius: var(--radius); border: 1px solid var(--gray-200); position: relative; z-index: 3; }
+        .file-icon { width: 40px; height: 40px; color: var(--atm-red); }
+        .file-name { font-weight: 500; color: var(--gray-800); display: block; text-align: left; }
+        .file-size { font-size: 0.85rem; color: var(--gray-500); display: block; text-align: left; }
+        .btn-remove-file { width: 36px; height: 36px; background: var(--gray-100); border: none; border-radius: 8px; cursor: pointer; margin-left: auto; transition: 0.2s; }
+        .btn-remove-file:hover { background: var(--gray-200); color: var(--atm-red); }
+        .form-actions { display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem; }
         
         /* Admin UI Components */
         .admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
@@ -288,7 +307,7 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17,8 12,3 7,8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                         <span id="profileImageLabel">Subir foto</span>
                     </label>
-                    <input type="file" id="profileImageInput" class="profile-image-input" accept="image/*" onchange="handleProfileImage(this)">
+                    <input type="file" id="profileImageInput" class="profile-image-input" accept="image/*" onchange="handleProfileImage(event)">
                     <input type="hidden" id="profileImageData">
                 </div>
                 <div class="form-group"><label>Email</label><input type="email" id="userEmail" required></div>
@@ -358,6 +377,7 @@
     
     <script>
         // ==================== VARIABLES GLOBALES ====================
+        window.isDragging = false; // Flag para prevenir click tras soltar drag
         let currentUser = null, currentUserData = null, currentFolderId = null;
         let usersData = [], sessionsData = [], foldersData = [];
         let deletingId = null, deletingType = null, editingUserId = null;
@@ -365,7 +385,7 @@
 
         function initFirebase() { db = firebase.firestore(); auth = firebase.auth(); }
 
-        // ==================== UTILIDADES ====================
+        // ==================== UTILIDADES UI ====================
         function setScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
@@ -385,6 +405,12 @@
             overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
         }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024; const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
 
         // ==================== AUTH & LOGIN ====================
         function setupAuthListener() {
@@ -435,7 +461,9 @@
                         errDiv.innerHTML = createStr.includes('in-use') ? 'Contraseña incorrecta.' : 
                             (createStr.includes('not-allowed') ? '<b>Error:</b> Habilita "Correo/Contraseña" en Firebase.' : createErr.message);
                     }
-                } else { errDiv.style.display = 'block'; errDiv.textContent = 'Error: ' + error.message; }
+                } else {
+                    errDiv.style.display = 'block'; errDiv.textContent = 'Error: ' + error.message;
+                }
             } finally {
                 btn.disabled = false; btn.textContent = 'Iniciar Sesión';
             }
@@ -471,11 +499,21 @@
         }
 
         // ==================== DRAG AND DROP (ORDENAR CARPETAS) ====================
-        function dragStart(e, id) { draggedFolderId = id; e.dataTransfer.effectAllowed = 'move'; }
+        let draggedFolderId = null;
+        function dragStart(e, id) { 
+            window.isDragging = true;
+            draggedFolderId = id; 
+            e.dataTransfer.effectAllowed = 'move'; 
+            // setData es OBLIGATORIO para que el navegador inicie el arrastre visualmente
+            e.dataTransfer.setData('text/plain', id); 
+        }
         function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
         function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
         async function drop(e, targetId) {
-            e.preventDefault(); e.currentTarget.classList.remove('drag-over');
+            e.preventDefault(); 
+            e.stopPropagation();
+            e.currentTarget.classList.remove('drag-over');
+            
             if (!draggedFolderId || draggedFolderId === targetId) return;
 
             let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
@@ -490,7 +528,12 @@
 
             const batch = db.batch();
             visible.forEach((f, idx) => { batch.update(db.collection('folders').doc(f.id), { order: idx }); });
-            try { await batch.commit(); } catch(err) { showToast('Error al ordenar', 'error'); }
+            try { 
+                await batch.commit(); 
+                showToast('Carpetas ordenadas', 'success'); 
+            } catch(err) { 
+                showToast('Error al ordenar', 'error'); 
+            }
         }
 
         // ==================== DESCARGAR PDF ====================
@@ -499,7 +542,8 @@
             if (s && s.pdfData) {
                 const link = document.createElement('a');
                 link.href = s.pdfData; 
-                link.download = s.originalName || s.title + '.pdf';
+                // Usamos el nombre original, si no existe, usamos el título
+                link.download = s.originalName || (s.title.replace(/ /g, '_') + '.pdf');
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -559,7 +603,6 @@
             const visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId);
 
             if (visibleFolders.length > 0) {
-                // Hint visual para que el admin sepa del Drag & Drop
                 if (currentUserData?.role === 'admin') {
                     html += `<p style="font-size:0.85rem; color:var(--gray-500); margin-bottom: 1rem;">💡 Puedes arrastrar y soltar las carpetas para cambiar su orden.</p>`;
                 }
@@ -567,10 +610,11 @@
                 visibleFolders.forEach(f => {
                     const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
                     const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
-                    const dragProps = currentUserData?.role === 'admin' ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
+                    // Eventos de Drag & Drop para ordenar
+                    const dragProps = currentUserData?.role === 'admin' ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="setTimeout(()=>window.isDragging=false, 100)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
                     
                     html += `
-                    <div class="folder-card" onclick="navigateToFolder('${f.id}')" ${dragProps}>
+                    <div class="folder-card" onclick="if(!window.isDragging) navigateToFolder('${f.id}')" ${dragProps}>
                         <div class="folder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
                         <div style="flex:1">
                             <div class="folder-name">${escapeHtml(f.name)}</div>
@@ -603,7 +647,6 @@
             container.innerHTML = html;
         }
 
-        function navigateToFolder(id) { currentFolderId = id; renderDashboard(); }
         function viewPDF(id) { 
             const s = sessionsData.find(x => x.id === id); 
             if (s && s.pdfData) {
@@ -612,7 +655,7 @@
             }
         }
 
-        // ==================== FORMULARIOS CARPETAS Y SUBIDA ====================
+        // ==================== FORMULARIOS (CARPETAS Y SUBIDA MODERNA) ====================
         function openFolderModal() {
             document.getElementById('folderForm').reset();
             document.getElementById('folderParentId').value = currentFolderId || '';
@@ -637,15 +680,58 @@
             showToast('Carpeta creada', 'success'); closeModal('folderModal');
         };
 
+        function getFolderOptionsHtml(folders, parentId = null, level = 0) {
+            let html = '';
+            folders.filter(f => (f.parentId || null) === parentId).forEach(f => {
+                const indent = '&nbsp;'.repeat(level * 4) + (level > 0 ? '└ ' : '');
+                html += `<option value="${f.id}">${indent}${escapeHtml(f.name)}</option>`;
+                html += getFolderOptionsHtml(folders, f.id, level + 1);
+            });
+            return html;
+        }
+
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id));
             document.getElementById('contentArea').innerHTML = `
                 <div class="upload-container">
                     <form id="upForm">
-                        <div class="form-group"><label>Ubicación</label><select id="upFolder" required><option value="">Selecciona...</option>${allowed.map(f => `<option value="${f.id}">${escapeHtml(f.name)}</option>`).join('')}</select></div>
-                        <div class="form-group"><label>Título</label><input type="text" id="upTitle" required></div>
-                        <div class="form-group"><label>PDF (Máx 1MB)</label><input type="file" id="upFile" accept=".pdf" required style="padding:1rem; border:2px dashed var(--gray-300); width:100%; box-sizing:border-box;"></div>
-                        <button type="submit" class="btn btn-primary btn-block" id="upBtn" style="margin-top:1rem;">Subir Archivo</button>
+                        <div class="form-group">
+                            <label>Ubicación (Carpeta o Subcarpeta)</label>
+                            <select id="upFolder" required><option value="">Selecciona dónde guardar el PDF...</option>${getFolderOptionsHtml(allowed)}</select>
+                        </div>
+                        <div class="form-group">
+                            <label>Título de la Sesión</label>
+                            <input type="text" id="upTitle" placeholder="Ej: Entrenamiento de reflejos" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Archivo PDF (máx. 1MB)</label>
+                            <div class="dropzone">
+                                <input type="file" id="upFile" accept=".pdf" required onchange="handleFileSelect(event)">
+                                <div id="dropzoneContent">
+                                    <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14,2 14,8 20,8"></polyline>
+                                    </svg>
+                                    <p class="dropzone-text">Arrastra y suelta tu PDF aquí</p>
+                                    <p class="dropzone-subtext">o haz clic para seleccionar</p>
+                                </div>
+                                <div class="file-info" id="fileInfo" style="display:none;">
+                                    <svg class="file-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14,2 14,8 20,8"></polyline>
+                                    </svg>
+                                    <div>
+                                        <span class="file-name" id="fileName"></span>
+                                        <span class="file-size" id="fileSize"></span>
+                                    </div>
+                                    <button type="button" class="btn-remove-file" onclick="clearFile(event)">✕</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary" onclick="showPage('dashboard')">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="upBtn">Subir Sesión</button>
+                        </div>
                     </form>
                 </div>`;
             
@@ -658,14 +744,31 @@
                 reader.onload = () => {
                     db.collection('sessions').add({
                         title: document.getElementById('upTitle').value, folderId: document.getElementById('upFolder').value,
-                        originalName: file.name, // GUARDAR NOMBRE ORIGINAL
+                        originalName: file.name, // Guardado para la descarga
                         pdfData: reader.result, uploadDate: new Date().toISOString(), uploadedBy: currentUser.uid
                     }).then(() => { showToast('Sesión guardada', 'success'); showPage('dashboard'); });
                 };
             };
         }
 
-        // ==================== ADMIN: USUARIOS Y CARPETAS ====================
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                document.getElementById('dropzoneContent').style.display = 'none';
+                document.getElementById('fileInfo').style.display = 'flex';
+                document.getElementById('fileName').textContent = file.name;
+                document.getElementById('fileSize').textContent = formatFileSize(file.size);
+            }
+        }
+
+        function clearFile(e) {
+            e.preventDefault(); // Prevenir que el click abra la ventana de archivos
+            document.getElementById('upFile').value = '';
+            document.getElementById('dropzoneContent').style.display = 'block';
+            document.getElementById('fileInfo').style.display = 'none';
+        }
+
+        // ==================== ADMIN: USUARIOS Y CARPETAS RAÍZ ====================
         function renderAdmin() {
             const container = document.getElementById('contentArea');
             container.innerHTML = `
@@ -739,7 +842,8 @@
         }
 
         // --- FOTO PERFIL ---
-        function handleProfileImage(input) {
+        function handleProfileImage(event) {
+            const input = event.target;
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
                 reader.onload = e => {
