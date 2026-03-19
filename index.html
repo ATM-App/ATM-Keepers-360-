@@ -131,6 +131,13 @@
         .search-bar:focus-within { border-color: var(--atm-red); box-shadow: 0 0 0 2px rgba(203,53,36,0.1); background: var(--white); }
         .search-bar input { border: none; background: transparent; outline: none; width: 100%; color: var(--gray-800); font-size: 0.9rem; margin-left: 0.5rem; }
         
+        /* 🔲 ALTERNADOR DE VISTA (Toggle) */
+        .view-toggle-container { display:flex; background:var(--gray-100); border:1px solid var(--gray-200); border-radius:var(--radius); padding:0.2rem; gap:0.2rem; }
+        .view-toggle-btn { background: transparent; border: none; padding: 0.4rem; border-radius: 8px; cursor: pointer; color: var(--gray-500); transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .view-toggle-btn.active { background: var(--white); color: var(--atm-blue); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .view-toggle-btn:hover:not(.active) { color: var(--atm-blue); }
+        body.dark-mode .view-toggle-btn.active { background: var(--gray-300); color: var(--white); box-shadow:none; }
+
         .header-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
         .menu-toggle { display: none; background: none; border: none; padding: 0.5rem; cursor: pointer; color: var(--gray-800); }
         .content-area { flex: 1; padding: 2rem; background: transparent; transition: 0.3s; }
@@ -147,14 +154,23 @@
         .folder-icon { width: 32px; height: 32px; color: var(--atm-blue); transition: 0.3s; }
         .folder-name { font-weight: 600; font-size: 1.05rem; flex: 1; color: var(--gray-800); }
         
-        /* Indicadores Drag & Drop */
         .folder-card[draggable="true"] { cursor: grab; }
         .folder-card[draggable="true"]:active { cursor: grabbing; }
         .folder-card.drag-over { border-left: 4px dashed var(--atm-red); opacity: 0.8; }
 
-        /* 🏷️ SISTEMA DE ETIQUETAS (Clickable) */
+        /* 🔥 INSIGNIA NUEVO */
+        .badge-new { position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; font-size: 0.65rem; font-weight: bold; padding: 0.3rem 0.6rem; border-radius: 9999px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.4); animation: pulseBadge 2s infinite; pointer-events: none; z-index: 10; border: 2px solid var(--white); }
+        @keyframes pulseBadge {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+
+        /* 🔲 VISTA GRID VS LISTA */
         .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
-        .session-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
+        .sessions-list { display: flex; flex-direction: column; gap: 1rem; }
+
+        .session-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; position: relative; }
         .session-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
         .session-header { padding: 1.25rem; border-bottom: 1px solid var(--gray-100); display: flex; align-items: flex-start; gap: 1rem; flex: 1; }
         .session-icon { width: 50px; height: 50px; background: rgba(203, 53, 36, 0.1); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; }
@@ -163,10 +179,22 @@
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; }
         
+        /* Modificadores para Modo Lista */
+        .session-card.list-view { flex-direction: row; align-items: center; padding: 0; overflow: visible; }
+        .session-card.list-view .badge-new { top: -8px; right: -8px; } /* Movemos el badge ligeramente en modo lista */
+        .session-card.list-view .session-header { border-bottom: none; align-items: center; padding: 1rem 1.25rem; flex: 1; }
+        .session-card.list-view .session-icon { margin-right: 0.5rem; }
+        .session-card.list-view .session-footer { background: transparent; padding: 1rem 1.25rem; flex-direction: row; justify-content: flex-end; border-left: 1px solid var(--gray-100); min-width: max-content; }
+        
         .tag-pill { display:inline-block; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; color:white; cursor:pointer; transition:0.2s; border: 1px solid transparent; }
         .tag-pill:hover { transform: scale(1.05); opacity: 0.9; }
 
-        /* Upload */
+        /* ⬇️ BOTÓN BACK TO TOP */
+        #backToTopBtn { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; background: var(--atm-red); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1000; box-shadow: var(--shadow-lg); transition: opacity 0.3s, transform 0.3s, background 0.3s; opacity: 0; transform: translateY(20px); pointer-events: none; }
+        #backToTopBtn.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        #backToTopBtn:hover { background: var(--atm-red-dark); transform: translateY(-3px); }
+
+        /* Upload & Others... */
         .upload-container { max-width: 600px; margin: 0 auto; background: var(--white); padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow); transition: 0.3s; }
         .dropzone { position: relative; border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center; transition: 0.3s; background: var(--gray-50); margin-bottom: 1rem; }
         .dropzone:hover { border-color: var(--atm-red); background: var(--white); }
@@ -174,7 +202,6 @@
         .dropzone-icon { width: 56px; height: 56px; color: var(--gray-400); margin-bottom: 1rem; }
         .dropzone-text { font-size: 1.1rem; font-weight: 500; color: var(--gray-700); margin-bottom: 0.375rem; }
         .dropzone-subtext { font-size: 0.9rem; color: var(--gray-500); }
-        
         .file-info { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: var(--white); border-radius: var(--radius); border: 1px solid var(--gray-200); position: relative; z-index: 3; }
         .file-icon { width: 40px; height: 40px; color: var(--atm-red); }
         .file-name { font-weight: 500; color: var(--gray-800); display: block; text-align: left; }
@@ -187,25 +214,20 @@
         .admin-tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
         .admin-tab { padding: 0.75rem 1.5rem; background: var(--white); border: 2px solid var(--gray-200); border-radius: var(--radius); cursor: pointer; font-weight: 500; transition: 0.3s; color: var(--gray-800); }
         .admin-tab.active { background: var(--atm-red); border-color: var(--atm-red); color: white; }
-        
         .users-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: var(--radius-xl); overflow: hidden; box-shadow: var(--shadow); }
         .users-table th, .users-table td { padding: 1rem 1.25rem; text-align: left; border-bottom: 1px solid var(--gray-100); }
         .users-table th { background: var(--gray-50); font-weight: 600; color: var(--gray-700); font-size: 0.9rem; }
         .users-table tbody tr:hover { background: var(--gray-50); }
-        
         .role-badge { display: inline-block; padding: 0.375rem 0.875rem; border-radius: 9999px; font-size: 0.8rem; font-weight: 500; }
         .role-badge.admin { background: rgba(203, 53, 36, 0.1); color: var(--atm-red); }
         .role-badge.coach { background: rgba(39, 46, 97, 0.1); color: var(--atm-blue); }
-        
         .action-buttons { display: flex; gap: 0.5rem; }
         .btn-icon-action { width: 36px; height: 36px; padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--gray-800); }
-
         .toggle-switch { position: relative; width: 44px; height: 24px; background: var(--gray-300); border-radius: 12px; cursor: pointer; transition: 0.3s; }
         .toggle-switch.active { background: #059669; }
         .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .toggle-switch.active::after { left: 23px; }
         .toggle-switch.disabled { opacity: 0.5; cursor: not-allowed; }
-
         .profile-image-input { display: none; }
         .profile-image-label { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1rem; background: var(--gray-100); border: 2px dashed var(--gray-300); border-radius: var(--radius); cursor: pointer; transition: 0.3s; color: var(--gray-600); font-size: 0.9rem; width: 100%; box-sizing: border-box; }
         .profile-image-label:hover { border-color: var(--atm-red); color: var(--atm-red); }
@@ -235,7 +257,10 @@
             .main-header { padding: 1rem; flex-wrap: wrap; gap: 0.75rem; }
             .header-actions { width: 100%; justify-content: space-between; }
             .search-bar { width: 100%; max-width: none; }
-            .folders-grid, .sessions-grid { grid-template-columns: 1fr; }
+            .folders-grid { grid-template-columns: 1fr; }
+            .sessions-grid { grid-template-columns: 1fr; }
+            .session-card.list-view { flex-direction: column; align-items: stretch; }
+            .session-card.list-view .session-footer { border-left: none; border-top: 1px solid var(--gray-100); justify-content: stretch; width: auto; }
             .content-area { padding: 1rem; }
             .users-table { display: block; overflow-x: auto; white-space: nowrap; }
             .session-footer { flex-direction: column; }
@@ -327,6 +352,10 @@
             <div class="content-area" id="contentArea"></div>
         </main>
     </div>
+
+    <button id="backToTopBtn" onclick="window.scrollTo({top:0, behavior:'smooth'})" title="Volver Arriba">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><polyline points="18 15 12 9 6 15"></polyline></svg>
+    </button>
 
     <div class="modal" id="folderModal">
         <div class="modal-overlay" onclick="closeModal('folderModal')"></div>
@@ -446,7 +475,11 @@
         let currentUser = null, currentUserData = null, currentFolderId = null;
         let usersData = [], sessionsData = [], foldersData = [], tagsData = [];
         let deletingId = null, deletingType = null, editingUserId = null;
-        let searchQuery = "", activeTagFilter = null; // 🏷️ Filtro interactivo
+        
+        // Buscador y Etiquetas y Vista
+        let searchQuery = "", activeTagFilter = null; 
+        let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
+        
         let db, auth, storage;
         let coachChartInstance = null, tagsChartInstance = null;
 
@@ -454,20 +487,14 @@
             db = firebase.firestore(); auth = firebase.auth(); storage = firebase.storage();
         }
 
-        // ==================== MODO OSCURO ====================
-        function toggleDarkMode() {
-            const isDark = document.body.classList.toggle('dark-mode');
-            localStorage.setItem('atm_dark_mode', isDark);
-            document.getElementById('darkModeIcon').textContent = isDark ? '☀️' : '🌙';
-            const btn = document.getElementById('darkModeToggle');
-            btn.innerHTML = isDark ? '<span id="darkModeIcon">☀️</span> Modo Claro' : '<span id="darkModeIcon">🌙</span> Modo Oscuro';
-        }
-        if (localStorage.getItem('atm_dark_mode') === 'true') {
-            document.body.classList.add('dark-mode');
-            document.addEventListener("DOMContentLoaded", () => {
-                document.getElementById('darkModeToggle').innerHTML = '<span id="darkModeIcon">☀️</span> Modo Claro';
-            });
-        }
+        // ==================== EVENTO SCROLL (BACK TO TOP) ====================
+        window.addEventListener('scroll', () => {
+            const btn = document.getElementById('backToTopBtn');
+            if(btn) {
+                if (window.scrollY > 300) btn.classList.add('show');
+                else btn.classList.remove('show');
+            }
+        });
 
         // ==================== UTILIDADES UI ====================
         function setScreen(id) {
@@ -576,7 +603,7 @@
             return false;
         }
 
-        // ==================== DRAG AND DROP (ORDENAR CARPETAS) ====================
+        // ==================== DRAG AND DROP ====================
         function dragStart(e, id) { 
             window.isDragging = true;
             draggedFolderId = id; 
@@ -594,7 +621,6 @@
         async function drop(e, targetId) {
             e.preventDefault(); e.stopPropagation();
             e.currentTarget.classList.remove('drag-over');
-            
             if (!draggedFolderId || draggedFolderId === targetId) return;
 
             let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
@@ -667,16 +693,16 @@
             } catch(e) { showToast('Error al eliminar', 'error'); }
         };
 
-        // ==================== NAVEGACIÓN Y BUSCADOR (CON ETIQUETAS) ====================
+        // ==================== NAVEGACIÓN, BUSCADOR Y FILTROS ====================
         function handleSearch() {
             searchQuery = document.getElementById('searchInput').value.toLowerCase();
             renderDashboard();
         }
         
         function toggleTagFilter(tagName, event) {
-            if(event) event.stopPropagation(); // Para que no abra la carpeta sin querer
-            if(activeTagFilter === tagName) activeTagFilter = null; // Quitar filtro
-            else activeTagFilter = tagName; // Poner filtro
+            if(event) event.stopPropagation(); 
+            if(activeTagFilter === tagName) activeTagFilter = null; 
+            else activeTagFilter = tagName; 
             renderDashboard();
         }
 
@@ -685,6 +711,12 @@
             searchQuery = "";
             document.getElementById('searchInput').value = "";
             renderDashboard();
+        }
+
+        function setViewMode(mode) {
+            currentViewMode = mode;
+            localStorage.setItem('atm_view_mode', mode);
+            showPage('dashboard'); // Re-render everything including header
         }
 
         function showPage(p) {
@@ -701,9 +733,20 @@
             if (p === 'dashboard') {
                 document.getElementById('pageTitle').textContent = 'Sesiones de Entrenamiento';
                 document.getElementById('pageSubtitle').textContent = 'Explora el contenido';
+                
+                // 🔲 BOTONES DE VISTA + ACCIONES
                 dynActions.innerHTML = `
-                    <button class="btn btn-secondary" style="white-space:nowrap;" onclick="openFolderModal()">📁 Carpeta</button> 
-                    <button class="btn btn-primary" style="white-space:nowrap;" onclick="showPage('upload')">📄 Archivo</button>`;
+                    <div class="view-toggle-container">
+                        <button class="view-toggle-btn ${currentViewMode === 'grid' ? 'active' : ''}" onclick="setViewMode('grid')" title="Vista Cuadrícula">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        </button>
+                        <button class="view-toggle-btn ${currentViewMode === 'list' ? 'active' : ''}" onclick="setViewMode('list')" title="Vista Lista">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                        </button>
+                    </div>
+                    <button class="btn btn-secondary" onclick="openFolderModal()">📁 Carpeta</button> 
+                    <button class="btn btn-primary" onclick="showPage('upload')">📄 Archivo</button>`;
+                
                 renderDashboard();
             } else if (p === 'upload') {
                 document.getElementById('pageTitle').textContent = 'Subir Archivo';
@@ -739,7 +782,7 @@
             renderDashboard(); 
         }
 
-        // Función auxiliar para dibujar tarjetas de sesión y ahorrar código
+        // --- COMPONENTE DE TARJETA ---
         function renderSessionCard(s, idx) {
             const uploader = usersData.find(u => u.id === s.uploadedBy);
             const uploaderAvatar = uploader?.profileImage ? `<img src="${uploader.profileImage}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : `<div class="user-avatar" style="width:24px;height:24px;font-size:0.7rem;border-radius:50%;">${getInitials(uploader?.fullName || 'User')}</div>`;
@@ -755,7 +798,7 @@
             if (isViewable) buttonsHtml += `<button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewFile('${s.id}')">Ver</button>`;
             buttonsHtml += `<button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadFile('${s.id}')">Descargar</button>`;
 
-            // Etiquetas Dinámicas Clickables
+            // Etiquetas
             let tagsHtml = '';
             if (s.tags && s.tags.length > 0) {
                 tagsHtml = `<div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.3rem;">` + s.tags.map(t => {
@@ -765,17 +808,23 @@
                 }).join('') + `</div>`;
             }
 
+            // 🔥 INSIGNIA NUEVO (< 48h)
+            const isNew = (new Date() - new Date(s.uploadDate)) < 172800000; // 48 horas
+            const newBadgeHtml = isNew ? `<div class="badge-new">¡NUEVO!</div>` : '';
+
             const animDelay = idx * 0.05;
+            const listViewClass = currentViewMode === 'list' ? 'list-view' : '';
 
             return `
-            <div class="session-card animate-entry" style="animation-delay: ${animDelay}s;">
+            <div class="session-card animate-entry ${listViewClass}" style="animation-delay: ${animDelay}s;">
+                ${newBadgeHtml}
                 <div class="session-header">
-                    <div class="session-icon" style="flex-direction:column;">
+                    <div class="session-icon">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;color:var(--atm-red);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline></svg>
                         <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">${typeLabel}</span>
                     </div>
                     <div style="flex:1; overflow:hidden;">
-                        <div class="session-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--gray-800);">${escapeHtml(s.title)}</div>
+                        <div class="session-title">${escapeHtml(s.title)}</div>
                         <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()} • ${typeLabel}</p>
                         ${tagsHtml}
                         <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
@@ -784,7 +833,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="session-footer" style="display:flex; gap:0.5rem;">
+                <div class="session-footer">
                     ${buttonsHtml}
                     ${deleteBtnHtml}
                 </div>
@@ -801,7 +850,7 @@
             // 🏷️ FILTROS (Buscador o Etiqueta)
             if (searchQuery.length > 0 || activeTagFilter !== null) {
                 
-                let titleMsg = `Resultados ${activeTagFilter ? 'de la etiqueta: <span class="tag-pill" style="background:var(--atm-red)">'+escapeHtml(activeTagFilter)+'</span>' : ''} ${searchQuery ? 'para "'+escapeHtml(searchQuery)+'"' : ''}`;
+                let titleMsg = `Resultados ${activeTagFilter ? 'de la etiqueta: <span class="tag-pill" style="background:var(--atm-red); margin-left:0.5rem;">'+escapeHtml(activeTagFilter)+'</span>' : ''} ${searchQuery ? 'para "'+escapeHtml(searchQuery)+'"' : ''}`;
                 
                 html += `
                 <div style="margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
@@ -833,10 +882,11 @@
                     const recentSessions = sessionsData
                         .filter(s => isFolderAllowed(s.folderId))
                         .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate))
-                        .slice(0, 4); // Últimas 4
+                        .slice(0, 4); 
 
                     if (recentSessions.length > 0) {
-                        html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">⏱️ Añadido Recientemente</h3><div class="sessions-grid" style="margin-bottom: 2rem;">`;
+                        html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">⏱️ Añadido Recientemente</h3>`;
+                        html += `<div class="${currentViewMode === 'list' ? 'sessions-list' : 'sessions-grid'}" style="margin-bottom: 2rem;">`;
                         recentSessions.forEach((s, idx) => { html += renderSessionCard(s, idx); });
                         html += `</div><hr style="border:none; border-top:1px solid var(--gray-200); margin-bottom:2rem;">`;
                     }
@@ -871,9 +921,10 @@
                 html += `</div>`;
             }
 
-            // RENDER SESIONES (En Carpeta)
+            // RENDER SESIONES (En Carpeta o Filtro)
             if (visibleSessions.length > 0) {
-                html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos Guardados</h3><div class="sessions-grid">`;
+                html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos</h3>`;
+                html += `<div class="${currentViewMode === 'list' ? 'sessions-list' : 'sessions-grid'}">`;
                 visibleSessions.forEach((s, idx) => { html += renderSessionCard(s, idx); });
                 html += `</div>`;
             }
@@ -977,6 +1028,7 @@
             document.getElementById('upForm').onsubmit = e => {
                 e.preventDefault();
                 const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
+                
                 btn.disabled = true; btn.textContent = "Subiendo (0%)...";
                 
                 const checkedTags = Array.from(document.querySelectorAll('.tag-check:checked')).map(cb => cb.value);
@@ -1098,7 +1150,7 @@
                 html += `
                 <div class="folder-card" style="cursor:default;">
                     <div style="flex:1">
-                        <div class="folder-name">${escapeHtml(f.name)}</div>
+                        <div class="folder-name" style="color:var(--gray-800);">${escapeHtml(f.name)}</div>
                         <div style="font-size:0.85rem; color:var(--gray-500); margin-top:0.25rem;">${assignedUser ? escapeHtml(assignedUser.fullName) : 'Sin asignar'}</div>
                     </div>
                     <div class="action-buttons">
@@ -1111,7 +1163,6 @@
             content.innerHTML = html;
         }
 
-        // --- ETIQUETAS DINÁMICAS ---
         function renderTagsTab() {
             const content = document.getElementById('adminContent');
             let html = `
@@ -1152,7 +1203,6 @@
             };
         }
 
-        // --- PANEL MÉTRICAS ---
         function renderStatsTab() {
             const content = document.getElementById('adminContent');
             
