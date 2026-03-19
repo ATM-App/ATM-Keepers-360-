@@ -104,6 +104,7 @@
         .folder-icon { width: 32px; height: 32px; color: var(--atm-blue); }
         .folder-name { font-weight: 600; font-size: 1.05rem; flex: 1; }
         
+        /* Indicadores Drag & Drop */
         .folder-card[draggable="true"] { cursor: grab; }
         .folder-card[draggable="true"]:active { cursor: grabbing; }
         .folder-card.drag-over { border-left: 4px dashed var(--atm-red); opacity: 0.8; }
@@ -114,9 +115,9 @@
         .session-header { padding: 1.25rem; border-bottom: 1px solid var(--gray-100); display: flex; align-items: flex-start; gap: 1rem; flex: 1; }
         .session-icon { width: 50px; height: 50px; background: rgba(203, 53, 36, 0.1); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .session-icon svg { width: 24px; height: 24px; color: var(--atm-red); }
-        .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.375rem; word-break: break-word; }
+        .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.2rem; word-break: break-word; }
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
-        .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.75rem; }
+        .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; }
         
         /* Modern Upload Design */
         .upload-container { max-width: 600px; margin: 0 auto; background: var(--white); padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow); }
@@ -238,7 +239,7 @@
                 </a>
                 <a href="#" class="nav-item" data-page="upload" onclick="showPage('upload')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17,8 12,3 7,8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    <span>Subir Archivo</span>
+                    <span>Subir Archivo PDF</span>
                 </a>
                 <a href="#" class="nav-item" data-page="admin" id="adminLink" style="display:none;" onclick="showPage('admin')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33"></path></svg>
@@ -469,6 +470,7 @@
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 if(document.getElementById('pageTitle').textContent === 'Administración') renderAdmin();
+                if(document.getElementById('pageTitle').textContent === 'Sesiones de Entrenamiento') renderDashboard();
             });
             db.collection('folders').onSnapshot(s => { 
                 foldersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
@@ -533,34 +535,44 @@
         }
 
         // ==================== VISUALIZAR Y DESCARGAR ARCHIVOS ====================
-        function viewFile(id) { 
+        function viewPDF(id) { 
             const s = sessionsData.find(x => x.id === id); 
             if (s && s.pdfData) {
-                // Recuperar el MIME type original
-                const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
-                let mimeType = s.fileType || 'application/pdf';
-                if (!s.fileType) {
-                    if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
-                    if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-                }
-
-                const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
+                const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: 'application/pdf'});
                 window.open(URL.createObjectURL(blob), '_blank');
             }
         }
 
-        function downloadFile(id) {
+        function downloadPDF(id) {
             const s = sessionsData.find(x => x.id === id);
             if (s && s.pdfData) {
                 const link = document.createElement('a');
                 link.href = s.pdfData; 
-                const ext = s.fileExt || 'pdf';
-                link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
+                link.download = s.originalName || (s.title.replace(/ /g, '_') + '.pdf');
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
             }
         }
+
+        // ==================== ELIMINAR ARCHIVOS ====================
+        function confirmDelete(id, type) { 
+            deletingId = id; 
+            deletingType = type; 
+            openModal('deleteModal'); 
+        }
+        
+        document.getElementById('confirmDeleteBtn').onclick = async () => {
+            try {
+                if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
+                else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
+                else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
+                closeModal('deleteModal'); 
+                showToast('Eliminado correctamente', 'success');
+            } catch(e) {
+                showToast('Error al eliminar', 'error');
+            }
+        };
 
         // ==================== NAVEGACIÓN Y VISTAS ====================
         function showPage(p) {
@@ -571,10 +583,10 @@
             if (p === 'dashboard') {
                 document.getElementById('pageTitle').textContent = 'Sesiones de Entrenamiento';
                 document.getElementById('pageSubtitle').textContent = 'Explora el contenido';
-                actions.innerHTML = `<button class="btn btn-secondary" onclick="openFolderModal()">+ Carpeta</button> <button class="btn btn-primary" onclick="showPage('upload')">+ Archivo</button>`;
+                actions.innerHTML = `<button class="btn btn-secondary" onclick="openFolderModal()">+ Carpeta</button> <button class="btn btn-primary" onclick="showPage('upload')">+ Subir PDF</button>`;
                 renderDashboard();
             } else if (p === 'upload') {
-                document.getElementById('pageTitle').textContent = 'Subir Archivo';
+                document.getElementById('pageTitle').textContent = 'Subir Archivo PDF';
                 document.getElementById('pageSubtitle').textContent = 'Añade contenido a tus carpetas';
                 renderUpload();
             } else if (p === 'admin') {
@@ -637,7 +649,7 @@
                         <div class="folder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
                         <div style="flex:1; pointer-events: none;">
                             <div class="folder-name">${escapeHtml(f.name)}</div>
-                            <div style="font-size:0.8rem; color:var(--gray-500); margin-top:0.2rem;">${subCount} subcarpetas • ${sessCount} archivos</div>
+                            <div style="font-size:0.8rem; color:var(--gray-500); margin-top:0.2rem;">${subCount} subcarpetas • ${sessCount} PDFs</div>
                         </div>
                     </div>`;
                 });
@@ -645,33 +657,41 @@
             }
 
             if (visibleSessions.length > 0) {
-                html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos</h3><div class="sessions-grid">`;
+                html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos PDF</h3><div class="sessions-grid">`;
                 visibleSessions.forEach(s => {
-                    // Determinar tipo de archivo para la UI
-                    const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
-                    const isViewable = ['pdf', 'ppt', 'pptx'].includes(ext);
-                    const typeLabel = ext.toUpperCase();
+                    
+                    // Autor de la sesión y permisos de borrado
+                    const uploader = usersData.find(u => u.id === s.uploadedBy);
+                    const uploaderAvatar = uploader?.profileImage 
+                        ? `<img src="${uploader.profileImage}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;">` 
+                        : `<div class="user-avatar" style="width:20px;height:20px;font-size:0.6rem;border-radius:50%;">${getInitials(uploader?.fullName || 'User')}</div>`;
+                    const uploaderName = uploader?.fullName || 'Usuario Desconocido';
 
-                    let buttonsHtml = '';
-                    if (isViewable) {
-                        buttonsHtml += `<button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewFile('${s.id}')">Ver</button>`;
-                    }
-                    buttonsHtml += `<button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadFile('${s.id}')">Descargar</button>`;
+                    const canDelete = currentUserData?.role === 'admin' || s.uploadedBy === currentUser.uid;
+                    const deleteBtnHtml = canDelete 
+                        ? `<button class="btn btn-secondary" style="padding:0.5rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="confirmDelete('${s.id}', 'session')" title="Eliminar archivo">🗑️</button>` 
+                        : '';
 
                     html += `
                     <div class="session-card">
                         <div class="session-header">
                             <div class="session-icon" style="flex-direction:column;">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;color:var(--atm-red);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline></svg>
-                                <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">${typeLabel}</span>
+                                <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">PDF</span>
                             </div>
-                            <div>
-                                <div class="session-title">${escapeHtml(s.title)}</div>
-                                <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()} • ${typeLabel}</p>
+                            <div style="flex:1; overflow:hidden;">
+                                <div class="session-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.title)}</div>
+                                <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()}</p>
+                                <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                                    ${uploaderAvatar}
+                                    <span style="font-size:0.8rem; color:var(--gray-500);">Subido por: <strong>${escapeHtml(uploaderName)}</strong></span>
+                                </div>
                             </div>
                         </div>
                         <div class="session-footer" style="display:flex; gap:0.5rem;">
-                            ${buttonsHtml}
+                            <button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewPDF('${s.id}')">Ver</button>
+                            <button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadPDF('${s.id}')">Descargar</button>
+                            ${deleteBtnHtml}
                         </div>
                     </div>`;
                 });
@@ -724,22 +744,22 @@
                     <form id="upForm">
                         <div class="form-group">
                             <label>Ubicación (Carpeta o Subcarpeta)</label>
-                            <select id="upFolder" required><option value="">Selecciona dónde guardar el archivo...</option>${getFolderOptionsHtml(allowed)}</select>
+                            <select id="upFolder" required><option value="">Selecciona dónde guardar el PDF...</option>${getFolderOptionsHtml(allowed)}</select>
                         </div>
                         <div class="form-group">
-                            <label>Título del Archivo</label>
+                            <label>Título de la Sesión</label>
                             <input type="text" id="upTitle" placeholder="Ej: Entrenamiento de reflejos" required>
                         </div>
                         <div class="form-group">
-                            <label>Archivo (máx. 1MB)</label>
+                            <label>Archivo PDF (máx. 1MB por limitación de base de datos)</label>
                             <div class="dropzone">
-                                <input type="file" id="upFile" required onchange="handleFileSelect(event)">
+                                <input type="file" id="upFile" accept=".pdf" required onchange="handleFileSelect(event)">
                                 <div id="dropzoneContent">
                                     <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                         <polyline points="14,2 14,8 20,8"></polyline>
                                     </svg>
-                                    <p class="dropzone-text">Arrastra y suelta tu archivo aquí</p>
+                                    <p class="dropzone-text">Arrastra y suelta tu PDF aquí</p>
                                     <p class="dropzone-subtext">o haz clic para seleccionar</p>
                                 </div>
                                 <div class="file-info" id="fileInfo" style="display:none;">
@@ -765,7 +785,9 @@
             document.getElementById('upForm').onsubmit = e => {
                 e.preventDefault();
                 const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
-                if (file.size > 1048576) return showToast("El archivo supera 1MB", "error");
+                
+                if (file.size > 1048576) return showToast("El archivo supera 1MB (Límite estricto)", "error");
+                
                 btn.disabled = true; btn.textContent = "Subiendo...";
                 const reader = new FileReader(); reader.readAsDataURL(file);
                 reader.onload = () => {
@@ -773,12 +795,18 @@
                         title: document.getElementById('upTitle').value, 
                         folderId: document.getElementById('upFolder').value,
                         originalName: file.name,
-                        fileType: file.type, // NUEVO: Guarda el tipo MIME
-                        fileExt: file.name.split('.').pop().toLowerCase(), // NUEVO: Guarda la extensión
+                        fileType: 'application/pdf', 
+                        fileExt: 'pdf',
                         pdfData: reader.result, 
                         uploadDate: new Date().toISOString(), 
                         uploadedBy: currentUser.uid
-                    }).then(() => { showToast('Archivo guardado', 'success'); showPage('dashboard'); });
+                    }).then(() => { 
+                        showToast('Archivo guardado', 'success'); 
+                        showPage('dashboard'); 
+                    }).catch(error => {
+                        showToast("Error al subir: " + error.message, "error");
+                        btn.disabled = false; btn.textContent = "Subir Archivo";
+                    });
                 };
             };
         }
@@ -979,13 +1007,6 @@
             e.preventDefault();
             await db.collection('folders').doc(document.getElementById('changeTrainerFolderId').value).update({ userId: document.getElementById('newTrainerSelect').value || null });
             showToast('Entrenador actualizado', 'success'); closeModal('changeTrainerModal');
-        };
-
-        function confirmDelete(id, type) { deletingId = id; deletingType = type; openModal('deleteModal'); }
-        document.getElementById('confirmDeleteBtn').onclick = async () => {
-            if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
-            else await db.collection('folders').doc(deletingId).delete();
-            closeModal('deleteModal'); showToast('Eliminado', 'success');
         };
 
         // INICIALIZACIÓN SEGURA
