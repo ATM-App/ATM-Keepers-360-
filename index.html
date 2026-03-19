@@ -31,6 +31,9 @@
             --atm-blue: #151b3d;
         }
 
+        /* Correcciones de visibilidad para Modo Oscuro */
+        body.dark-mode .folder-icon { color: var(--gray-400) !important; }
+
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Open Sans', sans-serif; background: var(--gray-100); color: var(--gray-800); min-height: 100vh; overflow-x: hidden; margin: 0; transition: background 0.3s, color 0.3s; }
         h1, h2, h3 { font-family: 'Montserrat', sans-serif; font-weight: 600; margin: 0; }
@@ -43,14 +46,12 @@
         .spinner { width: 48px; height: 48px; border: 4px solid var(--gray-200); border-top-color: var(--atm-red); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
-        /* ✨ MICRO-ANIMACIONES DE ENTRADA (CASCADA) */
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
         .animate-entry { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
 
-        /* Animación para el escudo en Login */
         @keyframes floatShield {
             0% { transform: translateY(0px); }
             50% { transform: translateY(-10px); }
@@ -71,7 +72,7 @@
         .form-group input, .form-group select { width: 100%; padding: 0.875rem 1rem; border: 2px solid var(--gray-200); border-radius: var(--radius); font-size: 1rem; transition: 0.3s; background: var(--gray-50); color: var(--gray-800); }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--atm-red); background: var(--white); }
         
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.95rem; cursor: pointer; transition: 0.3s; border: none; text-decoration: none; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border-radius: var(--radius); font-family: 'Montserrat', sans-serif; font-weight: 500; font-size: 0.95rem; cursor: pointer; transition: 0.3s; border: none; text-decoration: none; white-space: nowrap; }
         .btn-primary { background: var(--atm-red); color: white; }
         .btn-primary:hover { background: var(--atm-red-dark); }
         .btn-secondary { background: var(--gray-200); color: var(--gray-800); border: 1px solid var(--gray-300); }
@@ -106,12 +107,12 @@
         .header-title h1 { font-size: 1.5rem; }
         .header-title p { color: var(--gray-500); font-size: 0.9rem; margin-top: 0.25rem; margin-bottom: 0; }
         
-        /* 🔍 BUSCADOR INTELIGENTE */
+        /* 🔍 BUSCADOR INTELIGENTE - LUPA ARREGLADA */
         .search-bar { display: flex; align-items: center; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 9999px; padding: 0.5rem 1rem; width: 100%; max-width: 350px; transition: 0.3s; }
         .search-bar:focus-within { border-color: var(--atm-red); box-shadow: 0 0 0 2px rgba(203,53,36,0.1); background: var(--white); }
         .search-bar input { border: none; background: transparent; outline: none; width: 100%; color: var(--gray-800); font-size: 0.9rem; margin-left: 0.5rem; }
         
-        .header-actions { display: flex; gap: 0.75rem; align-items: center; }
+        .header-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
         .menu-toggle { display: none; background: none; border: none; padding: 0.5rem; cursor: pointer; color: var(--gray-800); }
         .content-area { flex: 1; padding: 2rem; background: var(--gray-100); transition: 0.3s; }
         
@@ -124,20 +125,12 @@
         .folders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1.25rem; margin-bottom: 2rem; }
         .folder-card { background: var(--white); border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); display: flex; align-items: center; gap: 1rem; cursor: pointer; transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s, background 0.3s; border: 1px solid transparent; }
         .folder-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); border-color: var(--atm-red); }
-        .folder-icon { width: 32px; height: 32px; color: var(--atm-blue); }
-        .folder-name { font-weight: 600; font-size: 1.05rem; flex: 1; }
+        .folder-icon { width: 32px; height: 32px; color: var(--atm-blue); transition: 0.3s; }
+        .folder-name { font-weight: 600; font-size: 1.05rem; flex: 1; color: var(--gray-800); }
         
         .folder-card[draggable="true"] { cursor: grab; }
         .folder-card[draggable="true"]:active { cursor: grabbing; }
         .folder-card.drag-over { border-left: 4px dashed var(--atm-red); opacity: 0.8; }
-
-        /* 🏷️ SISTEMA DE ETIQUETAS */
-        .tag-badge { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 9999px; font-size: 0.7rem; font-weight: 600; color: white; margin-right: 0.3rem; margin-bottom: 0.3rem; }
-        .tag-fuerza { background-color: #ef4444; }
-        .tag-juego { background-color: #3b82f6; }
-        .tag-tactica { background-color: #10b981; }
-        .tag-calentamiento { background-color: #f59e0b; }
-        .tag-default { background-color: #6b7280; }
 
         .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
         .session-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
@@ -149,7 +142,7 @@
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; }
         
-        /* 📊 ESTADÍSTICAS */
+        /* 📊 ESTADÍSTICAS - Corregidas para Dark Mode */
         .chart-container { background: var(--white); padding: 1.5rem; border-radius: var(--radius-lg); box-shadow: var(--shadow); margin-bottom: 1.5rem; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
 
@@ -185,7 +178,7 @@
         .role-badge.coach { background: rgba(39, 46, 97, 0.1); color: var(--atm-blue); }
         
         .action-buttons { display: flex; gap: 0.5rem; }
-        .btn-icon-action { width: 36px; height: 36px; padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; }
+        .btn-icon-action { width: 36px; height: 36px; padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--gray-800); }
 
         .toggle-switch { position: relative; width: 44px; height: 24px; background: var(--gray-300); border-radius: 12px; cursor: pointer; transition: 0.3s; }
         .toggle-switch.active { background: #059669; }
@@ -305,10 +298,10 @@
                 </div>
                 <div class="header-actions" id="headerActions">
                     <div class="search-bar" id="searchContainer">
-                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--gray-400)"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" style="color:var(--gray-400); min-width: 18px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         <input type="text" id="searchInput" placeholder="Buscar sesión o carpeta..." onkeyup="handleSearch()">
                     </div>
-                    <div id="dynamicHeaderButtons" style="display:flex; gap:0.75rem;"></div>
+                    <div id="dynamicHeaderButtons" style="display:flex; gap:0.75rem; flex-wrap: wrap;"></div>
                 </div>
             </header>
             <div class="content-area" id="contentArea"></div>
@@ -411,7 +404,7 @@
         <div class="modal-overlay" onclick="closeModal('deleteModal')"></div>
         <div class="modal-content" style="max-width:400px; text-align:center;">
             <div class="modal-header"><h3>Confirmar</h3><button class="modal-close" onclick="closeModal('deleteModal')">✕</button></div>
-            <div style="padding: 1.5rem;"><p>¿Estás seguro de que deseas eliminar este elemento?</p></div>
+            <div style="padding: 1.5rem;"><p style="color:var(--gray-800)">¿Estás seguro de que deseas eliminar este elemento?</p></div>
             <div style="display:flex; justify-content:center; gap:1rem; padding: 1.5rem;">
                 <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancelar</button>
                 <button class="btn btn-primary" style="background:var(--atm-red);" id="confirmDeleteBtn">Eliminar</button>
@@ -424,21 +417,24 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="firebase-config.js"></script>
     
     <script>
         // ==================== VARIABLES GLOBALES ====================
         window.isDragging = false; 
         let currentUser = null, currentUserData = null, currentFolderId = null;
-        let usersData = [], sessionsData = [], foldersData = [];
+        let usersData = [], sessionsData = [], foldersData = [], tagsData = [];
         let deletingId = null, deletingType = null, editingUserId = null;
-        let searchQuery = ""; // Buscador
-        let db, auth;
-
-        // Gráficos
+        let searchQuery = "";
+        let db, auth, storage;
         let coachChartInstance = null, tagsChartInstance = null;
 
-        function initFirebase() { db = firebase.firestore(); auth = firebase.auth(); }
+        function initFirebase() { 
+            db = firebase.firestore(); 
+            auth = firebase.auth(); 
+            storage = firebase.storage();
+        }
 
         // ==================== MODO OSCURO ====================
         function toggleDarkMode() {
@@ -450,7 +446,6 @@
         }
         if (localStorage.getItem('atm_dark_mode') === 'true') {
             document.body.classList.add('dark-mode');
-            document.getElementById('darkModeIcon').textContent = '☀️';
             document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById('darkModeToggle').innerHTML = '<span id="darkModeIcon">☀️</span> Modo Claro';
             });
@@ -481,13 +476,6 @@
             const k = 1024; const sizes = ['Bytes', 'KB', 'MB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-        function getTagClass(tag) {
-            if(tag.includes('Fuerza')) return 'tag-fuerza';
-            if(tag.includes('Juego')) return 'tag-juego';
-            if(tag.includes('Táctica')) return 'tag-tactica';
-            if(tag.includes('Calentamiento')) return 'tag-calentamiento';
-            return 'tag-default';
         }
 
         // ==================== AUTH & LOGIN ====================
@@ -548,7 +536,14 @@
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 if(document.getElementById('pageTitle').textContent === 'Sesiones de Entrenamiento') renderDashboard();
-                if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderStatsTab();
+                if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
+            });
+            // Escuchar Etiquetas Dinámicas
+            db.collection('tags').onSnapshot(s => {
+                tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
+                if(document.getElementById('pageTitle').textContent === 'Subir Archivo') renderUpload();
+                if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderTagsTab();
+                if(document.getElementById('pageTitle').textContent === 'Sesiones de Entrenamiento') renderDashboard();
             });
         }
 
@@ -606,28 +601,40 @@
         // ==================== VISUALIZAR Y DESCARGAR ARCHIVOS ====================
         function viewFile(id) { 
             const s = sessionsData.find(x => x.id === id); 
-            if (s && s.pdfData) {
-                const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
-                let mimeType = s.fileType || 'application/pdf';
-                if (!s.fileType) {
-                    if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
-                    if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+            if (s) {
+                if (s.fileUrl) { window.open(s.fileUrl, '_blank'); } 
+                else if (s.pdfData) {
+                    const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
+                    let mimeType = s.fileType || 'application/pdf';
+                    if (!s.fileType) {
+                        if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
+                        if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                    }
+                    const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
+                    window.open(URL.createObjectURL(blob), '_blank');
                 }
-                const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
-                window.open(URL.createObjectURL(blob), '_blank');
             }
         }
 
         function downloadFile(id) {
             const s = sessionsData.find(x => x.id === id);
-            if (s && s.pdfData) {
-                const link = document.createElement('a');
-                link.href = s.pdfData; 
-                const ext = s.fileExt || 'pdf';
-                link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+            if (s) {
+                if (s.fileUrl) {
+                    fetch(s.fileUrl)
+                        .then(response => response.blob())
+                        .then(blob => {
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement('a'); link.href = url;
+                            link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + (s.fileExt || 'pdf'));
+                            document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                            window.URL.revokeObjectURL(url);
+                        }).catch(err => { window.open(s.fileUrl, '_blank'); });
+                } else if (s.pdfData) {
+                    const link = document.createElement('a'); link.href = s.pdfData; 
+                    const ext = s.fileExt || 'pdf';
+                    link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
+                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
+                }
             }
         }
         
@@ -637,11 +644,10 @@
                 if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
                 else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
                 else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
+                else if (deletingType === 'tag') await db.collection('tags').doc(deletingId).delete();
                 closeModal('deleteModal'); 
                 showToast('Eliminado correctamente', 'success');
-            } catch(e) {
-                showToast('Error al eliminar', 'error');
-            }
+            } catch(e) { showToast('Error al eliminar', 'error'); }
         };
 
         // ==================== NAVEGACIÓN Y BUSCADOR ====================
@@ -652,7 +658,7 @@
 
         function showPage(p) {
             currentFolderId = null;
-            searchQuery = ""; // Reset buscador al cambiar de página
+            searchQuery = ""; 
             document.getElementById('searchInput').value = "";
             
             document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === p));
@@ -663,10 +669,13 @@
             if (p === 'dashboard') {
                 document.getElementById('pageTitle').textContent = 'Sesiones de Entrenamiento';
                 document.getElementById('pageSubtitle').textContent = 'Explora el contenido';
-                dynActions.innerHTML = `<button class="btn btn-secondary" onclick="openFolderModal()">+ Carpeta</button> <button class="btn btn-primary" onclick="showPage('upload')">+ Archivo</button>`;
+                // BOTONES CABECERA ARREGLADOS
+                dynActions.innerHTML = `
+                    <button class="btn btn-secondary" style="white-space:nowrap;" onclick="openFolderModal()">📁 Carpeta</button> 
+                    <button class="btn btn-primary" style="white-space:nowrap;" onclick="showPage('upload')">📄 Archivo</button>`;
                 renderDashboard();
             } else if (p === 'upload') {
-                document.getElementById('pageTitle').textContent = 'Subir Archivo PDF';
+                document.getElementById('pageTitle').textContent = 'Subir Archivo';
                 document.getElementById('pageSubtitle').textContent = 'Añade contenido a tus carpetas';
                 renderUpload();
             } else if (p === 'admin') {
@@ -705,14 +714,11 @@
             let visibleFolders = [];
             let visibleSessions = [];
 
-            // Si hay búsqueda activa, ignorar la estructura de carpetas y buscar en todo
             if (searchQuery.length > 0) {
                 html += `<h3 style="margin-bottom:1.5rem; color:var(--atm-blue);">Resultados de búsqueda para "${escapeHtml(searchQuery)}"</h3>`;
-                
                 visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && f.name.toLowerCase().includes(searchQuery));
                 visibleSessions = sessionsData.filter(s => isFolderAllowed(s.folderId) && (s.title.toLowerCase().includes(searchQuery) || (s.tags && s.tags.join(' ').toLowerCase().includes(searchQuery))));
             } else {
-                // Navegación Normal (Breadcrumbs)
                 html += `<div class="breadcrumbs"><span class="breadcrumb-item" onclick="navigateToFolder(null)">🏠 Inicio</span>`;
                 if (currentFolderId) {
                     let path = [], curr = foldersData.find(f => f.id === currentFolderId);
@@ -726,7 +732,6 @@
                 visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId);
             }
 
-            // RENDER CARPETAS
             if (visibleFolders.length > 0) {
                 if (currentUserData?.role === 'admin' && searchQuery.length === 0) {
                     html += `<p style="font-size:0.85rem; color:var(--gray-500); margin-bottom: 1rem;">💡 Puedes arrastrar y soltar las carpetas para cambiar su orden.</p>`;
@@ -736,8 +741,6 @@
                     const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
                     const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
                     const dragProps = (currentUserData?.role === 'admin' && searchQuery.length === 0) ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="dragEnd(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
-                    
-                    // Delay para animación
                     const animDelay = idx * 0.05;
                     
                     html += `
@@ -752,23 +755,31 @@
                 html += `</div>`;
             }
 
-            // RENDER SESIONES
             if (visibleSessions.length > 0) {
                 html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos Guardados</h3><div class="sessions-grid">`;
                 visibleSessions.forEach((s, idx) => {
-                    // Autor
                     const uploader = usersData.find(u => u.id === s.uploadedBy);
                     const uploaderAvatar = uploader?.profileImage ? `<img src="${uploader.profileImage}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : `<div class="user-avatar" style="width:24px;height:24px;font-size:0.7rem;border-radius:50%;">${getInitials(uploader?.fullName || 'User')}</div>`;
                     const uploaderName = uploader?.fullName || 'Usuario Desconocido';
-
-                    // Permisos borrar
                     const canDelete = currentUserData?.role === 'admin' || s.uploadedBy === currentUser.uid;
                     const deleteBtnHtml = canDelete ? `<button class="btn btn-secondary" style="padding:0.5rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="confirmDelete('${s.id}', 'session')" title="Eliminar">🗑️</button>` : '';
 
-                    // Etiquetas
+                    const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
+                    const isViewable = ['pdf', 'ppt', 'pptx'].includes(ext);
+                    const typeLabel = ext.toUpperCase();
+
+                    let buttonsHtml = '';
+                    if (isViewable) buttonsHtml += `<button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewFile('${s.id}')">Ver</button>`;
+                    buttonsHtml += `<button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadFile('${s.id}')">Descargar</button>`;
+
+                    // Etiquetas Dinámicas
                     let tagsHtml = '';
                     if (s.tags && s.tags.length > 0) {
-                        tagsHtml = `<div style="margin-top:0.5rem;">` + s.tags.map(t => `<span class="tag-badge ${getTagClass(t)}">${escapeHtml(t)}</span>`).join('') + `</div>`;
+                        tagsHtml = `<div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.3rem;">` + s.tags.map(t => {
+                            const tagObj = tagsData.find(x => x.name === t);
+                            const bgColor = tagObj ? tagObj.color : '#6b7280';
+                            return `<span style="display:inline-block; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; color:white; background-color:${bgColor};">${escapeHtml(t)}</span>`;
+                        }).join('') + `</div>`;
                     }
 
                     const animDelay = idx * 0.05;
@@ -778,11 +789,11 @@
                         <div class="session-header">
                             <div class="session-icon" style="flex-direction:column;">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;color:var(--atm-red);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline></svg>
-                                <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">PDF</span>
+                                <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">${typeLabel}</span>
                             </div>
                             <div style="flex:1; overflow:hidden;">
-                                <div class="session-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.title)}</div>
-                                <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()}</p>
+                                <div class="session-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--gray-800);">${escapeHtml(s.title)}</div>
+                                <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()} • ${typeLabel}</p>
                                 ${tagsHtml}
                                 <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
                                     ${uploaderAvatar}
@@ -791,8 +802,7 @@
                             </div>
                         </div>
                         <div class="session-footer" style="display:flex; gap:0.5rem;">
-                            <button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewFile('${s.id}')">Ver</button>
-                            <button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadFile('${s.id}')">Descargar</button>
+                            ${buttonsHtml}
                             ${deleteBtnHtml}
                         </div>
                     </div>`;
@@ -841,6 +851,17 @@
 
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id));
+            
+            // Render Etiquetas Dinámicas
+            let tagsHtml = tagsData.map(t => `
+                <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer; color:var(--gray-800);">
+                    <input type="checkbox" value="${escapeHtml(t.name)}" class="tag-check"> 
+                    <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background-color:${t.color};"></span> 
+                    ${escapeHtml(t.name)}
+                </label>`).join('');
+            
+            if(tagsData.length === 0) tagsHtml = '<span style="color:var(--gray-500); font-size:0.85rem;">No hay etiquetas creadas. Configúralas en Administración.</span>';
+
             document.getElementById('contentArea').innerHTML = `
                 <div class="upload-container animate-entry">
                     <form id="upForm">
@@ -849,30 +870,27 @@
                             <select id="upFolder" required><option value="">Selecciona dónde guardar el archivo...</option>${getFolderOptionsHtml(allowed)}</select>
                         </div>
                         <div class="form-group">
-                            <label>Título de la Sesión</label>
+                            <label>Título del Archivo</label>
                             <input type="text" id="upTitle" placeholder="Ej: Entrenamiento de reflejos" required>
                         </div>
                         
                         <div class="form-group">
                             <label>Etiquetas (Opcional)</label>
                             <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-top:0.5rem; background:var(--gray-50); padding:1rem; border-radius:var(--radius); border:1px solid var(--gray-200);">
-                                <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer;"><input type="checkbox" value="Fuerza" class="tag-check"> Fuerza</label>
-                                <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer;"><input type="checkbox" value="Juego Aéreo" class="tag-check"> Juego Aéreo</label>
-                                <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer;"><input type="checkbox" value="Táctica" class="tag-check"> Táctica</label>
-                                <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer;"><input type="checkbox" value="Calentamiento" class="tag-check"> Calentamiento</label>
+                                ${tagsHtml}
                             </div>
                         </div>
 
                         <div class="form-group">
-                            <label>Archivo PDF (máx. 1MB)</label>
+                            <label>Archivo (Cualquier formato)</label>
                             <div class="dropzone">
-                                <input type="file" id="upFile" accept=".pdf" required onchange="handleFileSelect(event)">
+                                <input type="file" id="upFile" required onchange="handleFileSelect(event)">
                                 <div id="dropzoneContent">
                                     <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
                                         <polyline points="14,2 14,8 20,8"></polyline>
                                     </svg>
-                                    <p class="dropzone-text">Arrastra y suelta tu PDF aquí</p>
+                                    <p class="dropzone-text">Arrastra y suelta tu archivo aquí</p>
                                     <p class="dropzone-subtext">o haz clic para seleccionar</p>
                                 </div>
                                 <div class="file-info" id="fileInfo" style="display:none;">
@@ -884,7 +902,7 @@
                         </div>
                         <div class="form-actions">
                             <button type="button" class="btn btn-secondary" onclick="showPage('dashboard')">Cancelar</button>
-                            <button type="submit" class="btn btn-primary" id="upBtn">Subir Archivo PDF</button>
+                            <button type="submit" class="btn btn-primary" id="upBtn">Subir Archivo</button>
                         </div>
                     </form>
                 </div>`;
@@ -892,33 +910,42 @@
             document.getElementById('upForm').onsubmit = e => {
                 e.preventDefault();
                 const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
-                if (file.size > 1048576) return showToast("El archivo supera 1MB (Límite estricto)", "error");
+                btn.disabled = true; btn.textContent = "Subiendo (0%)...";
                 
-                btn.disabled = true; btn.textContent = "Subiendo...";
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                
-                // Recoger etiquetas seleccionadas
                 const checkedTags = Array.from(document.querySelectorAll('.tag-check:checked')).map(cb => cb.value);
 
-                reader.onload = () => {
-                    db.collection('sessions').add({
-                        title: document.getElementById('upTitle').value, 
-                        folderId: document.getElementById('upFolder').value,
-                        originalName: file.name,
-                        tags: checkedTags, // NUEVO
-                        fileType: 'application/pdf', 
-                        fileExt: 'pdf',
-                        pdfData: reader.result, 
-                        uploadDate: new Date().toISOString(), 
-                        uploadedBy: currentUser.uid
-                    }).then(() => { 
-                        showToast('Archivo guardado', 'success'); 
-                        showPage('dashboard'); 
-                    }).catch(error => {
+                const storageRef = storage.ref();
+                const fileRef = storageRef.child('sesiones/' + Date.now() + '_' + file.name);
+                const uploadTask = fileRef.put(file);
+
+                uploadTask.on('state_changed', 
+                    (snapshot) => {
+                        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+                        btn.textContent = "Subiendo (" + progress + "%)...";
+                    }, 
+                    (error) => {
                         showToast("Error al subir: " + error.message, "error");
-                        btn.disabled = false; btn.textContent = "Subir Archivo PDF";
-                    });
-                };
+                        btn.disabled = false; btn.textContent = "Subir Archivo";
+                    }, 
+                    () => {
+                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
+                            db.collection('sessions').add({
+                                title: document.getElementById('upTitle').value, 
+                                folderId: document.getElementById('upFolder').value,
+                                originalName: file.name,
+                                tags: checkedTags,
+                                fileType: file.type, 
+                                fileExt: file.name.split('.').pop().toLowerCase(),
+                                fileUrl: downloadURL,
+                                uploadDate: new Date().toISOString(), 
+                                uploadedBy: currentUser.uid
+                            }).then(() => { 
+                                showToast('Archivo guardado', 'success'); 
+                                showPage('dashboard'); 
+                            });
+                        });
+                    }
+                );
             };
         }
 
@@ -946,6 +973,7 @@
                 <div class="admin-tabs animate-entry">
                     <button class="admin-tab active" onclick="switchAdminTab(event, 'users')">👥 Usuarios</button>
                     <button class="admin-tab" onclick="switchAdminTab(event, 'folders')">📁 Carpetas Raíz</button>
+                    <button class="admin-tab" onclick="switchAdminTab(event, 'tags')">🏷️ Etiquetas</button>
                     <button class="admin-tab" onclick="switchAdminTab(event, 'stats')">📊 Métricas</button>
                 </div>
                 <div id="adminContent" class="animate-entry" style="animation-delay: 0.1s;"></div>
@@ -958,6 +986,7 @@
             e.target.classList.add('active');
             if (tab === 'users') renderUsersTab(); 
             else if (tab === 'folders') renderFoldersTab();
+            else if (tab === 'tags') renderTagsTab();
             else if (tab === 'stats') renderStatsTab();
         }
 
@@ -971,15 +1000,15 @@
                 const isMe = u.id === currentUser.uid;
                 html += `
                 <tr>
-                    <td><div style="display:flex;align-items:center;gap:0.875rem;">${avatar}<div><div style="font-weight:500;">${escapeHtml(u.username || u.email)}</div><div style="font-size:0.8rem;color:var(--gray-500);">${escapeHtml(u.email)}</div></div></div></td>
-                    <td>${escapeHtml(u.fullName)}</td>
+                    <td><div style="display:flex;align-items:center;gap:0.875rem;">${avatar}<div><div style="font-weight:500; color:var(--gray-800);">${escapeHtml(u.username || u.email)}</div><div style="font-size:0.8rem;color:var(--gray-500);">${escapeHtml(u.email)}</div></div></div></td>
+                    <td style="color:var(--gray-800);">${escapeHtml(u.fullName)}</td>
                     <td><span class="role-badge ${u.role}">${u.role === 'admin' ? 'Admin' : 'Entrenador'}</span></td>
                     <td><div class="toggle-switch ${u.active ? 'active' : ''} ${isMe ? 'disabled' : ''}" onclick="${isMe ? '' : `toggleUserActive('${u.id}')`}"></div></td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn btn-secondary btn-icon-action" onclick="editUser('${u.id}')" title="Editar">✏️</button>
                             <button class="btn btn-secondary btn-icon-action" onclick="changePassword('${u.id}')" title="Contraseña rápida">🔒</button>
-                            ${!isMe ? `<button class="btn btn-primary btn-icon-action" style="background:var(--atm-red)" onclick="confirmDelete('${u.id}', 'user')" title="Eliminar">🗑️</button>` : ''}
+                            ${!isMe ? `<button class="btn btn-primary btn-icon-action" style="background:var(--atm-red); color:white;" onclick="confirmDelete('${u.id}', 'user')" title="Eliminar">🗑️</button>` : ''}
                         </div>
                     </td>
                 </tr>`;
@@ -1002,12 +1031,12 @@
                 html += `
                 <div class="folder-card" style="cursor:default;">
                     <div style="flex:1">
-                        <div class="folder-name">${escapeHtml(f.name)}</div>
+                        <div class="folder-name" style="color:var(--gray-800);">${escapeHtml(f.name)}</div>
                         <div style="font-size:0.85rem; color:var(--gray-500); margin-top:0.25rem;">${assignedUser ? escapeHtml(assignedUser.fullName) : 'Sin asignar'}</div>
                     </div>
                     <div class="action-buttons">
                         <button class="btn btn-secondary btn-icon-action" onclick="showChangeTrainerModal('${f.id}')" title="Cambiar entrenador">✏️</button>
-                        <button class="btn btn-primary btn-icon-action" style="background:var(--atm-red);" onclick="confirmDelete('${f.id}', 'folder')" title="Eliminar">🗑️</button>
+                        <button class="btn btn-primary btn-icon-action" style="background:var(--atm-red); color:white;" onclick="confirmDelete('${f.id}', 'folder')" title="Eliminar">🗑️</button>
                     </div>
                 </div>`;
             });
@@ -1015,11 +1044,51 @@
             content.innerHTML = html;
         }
 
+        // --- ETIQUETAS DINÁMICAS ---
+        function renderTagsTab() {
+            const content = document.getElementById('adminContent');
+            let html = `
+            <div style="background:var(--white); padding:1.5rem; border-radius:var(--radius-lg); box-shadow:var(--shadow); margin-bottom:1.5rem;">
+                <form id="addTagForm" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                    <div style="flex:1; min-width:200px;">
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem; color:var(--gray-700);">Nombre de Etiqueta</label>
+                        <input type="text" id="newTagName" required style="width:100%; padding:0.75rem; border:1px solid var(--gray-200); border-radius:var(--radius); background:var(--gray-50); color:var(--gray-800);">
+                    </div>
+                    <div>
+                        <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem; color:var(--gray-700);">Color</label>
+                        <input type="color" id="newTagColor" value="#CB3524" style="height:42px; width:60px; padding:0; border:none; border-radius:var(--radius); cursor:pointer;">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Añadir Etiqueta</button>
+                </form>
+            </div>
+            <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">`;
+            
+            tagsData.forEach(t => {
+                html += `
+                <div style="display:flex; align-items:center; background:var(--gray-50); border:1px solid var(--gray-200); padding:0.5rem 1rem; border-radius:9999px;">
+                    <span style="width:12px; height:12px; border-radius:50%; background-color:${t.color}; margin-right:0.5rem;"></span>
+                    <span style="font-weight:500; font-size:0.9rem; margin-right:1rem; color:var(--gray-800);">${escapeHtml(t.name)}</span>
+                    <button style="background:none; border:none; color:var(--atm-red); cursor:pointer; font-weight:bold;" onclick="confirmDelete('${t.id}', 'tag')">✕</button>
+                </div>`;
+            });
+            html += `</div>`;
+            content.innerHTML = html;
+
+            document.getElementById('addTagForm').onsubmit = async e => {
+                e.preventDefault();
+                const name = document.getElementById('newTagName').value.trim();
+                const color = document.getElementById('newTagColor').value;
+                if(name) {
+                    await db.collection('tags').add({ name, color });
+                    showToast('Etiqueta añadida', 'success');
+                }
+            };
+        }
+
         // --- PANEL MÉTRICAS ---
         function renderStatsTab() {
             const content = document.getElementById('adminContent');
             
-            // Destruir gráficos anteriores si existen (evita error de Chart.js)
             if(coachChartInstance) coachChartInstance.destroy();
             if(tagsChartInstance) tagsChartInstance.destroy();
 
@@ -1027,16 +1096,16 @@
                 <div style="display:flex; gap:1.5rem; margin-bottom:1.5rem; flex-wrap:wrap;">
                     <div style="flex:1; min-width:200px; background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow); border-left:4px solid var(--atm-red);">
                         <h3 style="color:var(--gray-500); font-size:0.9rem;">Total de Archivos</h3>
-                        <p style="font-size:2rem; font-weight:bold; color:var(--atm-blue); margin-top:0.5rem;">${sessionsData.length}</p>
+                        <p style="font-size:2rem; font-weight:bold; color:var(--gray-800); margin-top:0.5rem;">${sessionsData.length}</p>
                     </div>
                     <div style="flex:1; min-width:200px; background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow); border-left:4px solid var(--atm-blue);">
                         <h3 style="color:var(--gray-500); font-size:0.9rem;">Total de Carpetas</h3>
-                        <p style="font-size:2rem; font-weight:bold; color:var(--atm-blue); margin-top:0.5rem;">${foldersData.length}</p>
+                        <p style="font-size:2rem; font-weight:bold; color:var(--gray-800); margin-top:0.5rem;">${foldersData.length}</p>
                     </div>
                 </div>
                 <div class="stats-grid">
                     <div class="chart-container">
-                        <h3 style="margin-bottom:1rem; font-size:1rem; color:var(--gray-700); text-align:center;">Sesiones por Entrenador</h3>
+                        <h3 style="margin-bottom:1rem; font-size:1rem; color:var(--gray-700); text-align:center;">Archivos por Entrenador</h3>
                         <canvas id="coachChart" style="max-height: 250px;"></canvas>
                     </div>
                     <div class="chart-container">
@@ -1046,14 +1115,12 @@
                 </div>
             `;
 
-            // Procesar Datos Entrenadores
             const coachCounts = {};
             sessionsData.forEach(s => {
                 const name = usersData.find(u => u.id === s.uploadedBy)?.fullName || 'Desconocido';
                 coachCounts[name] = (coachCounts[name] || 0) + 1;
             });
 
-            // Procesar Datos Etiquetas
             const tagCounts = {};
             sessionsData.forEach(s => {
                 if(s.tags && s.tags.length > 0) {
@@ -1061,10 +1128,9 @@
                 }
             });
 
-            // Colores corporativos Atleti
             const bgColors = ['#CB3524', '#272E61', '#9CA3AF', '#3D4585', '#A8281A', '#E5E7EB'];
+            const textColor = getComputedStyle(document.body).getPropertyValue('--gray-700').trim();
 
-            // Renderizar Gráfico 1 (Donut)
             const ctx1 = document.getElementById('coachChart').getContext('2d');
             coachChartInstance = new Chart(ctx1, {
                 type: 'doughnut',
@@ -1072,10 +1138,9 @@
                     labels: Object.keys(coachCounts).length > 0 ? Object.keys(coachCounts) : ['Sin datos'],
                     datasets: [{ data: Object.keys(coachCounts).length > 0 ? Object.values(coachCounts) : [1], backgroundColor: bgColors }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: getComputedStyle(document.body).getPropertyValue('--gray-700') } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor } } } }
             });
 
-            // Renderizar Gráfico 2 (Bar)
             const ctx2 = document.getElementById('tagsChart').getContext('2d');
             tagsChartInstance = new Chart(ctx2, {
                 type: 'bar',
@@ -1083,7 +1148,7 @@
                     labels: Object.keys(tagCounts).length > 0 ? Object.keys(tagCounts) : ['Sin datos'],
                     datasets: [{ label: 'Usos', data: Object.keys(tagCounts).length > 0 ? Object.values(tagCounts) : [0], backgroundColor: '#CB3524' }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks:{ color: getComputedStyle(document.body).getPropertyValue('--gray-700') } }, x: { ticks:{ color: getComputedStyle(document.body).getPropertyValue('--gray-700') } } }, plugins: { legend: { display: false } } }
+                options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks:{ color: textColor } }, x: { ticks:{ color: textColor } } }, plugins: { legend: { display: false } } }
             });
         }
 
