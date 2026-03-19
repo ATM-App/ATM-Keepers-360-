@@ -182,7 +182,6 @@
         .session-icon { width: 50px; height: 50px; background: rgba(203, 53, 36, 0.1); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .session-icon svg { width: 24px; height: 24px; color: var(--atm-red); }
         
-        /* CORRECCIÓN: TÍTULO SEPARADO DEL BADGE */
         .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; word-break: break-word; color: var(--gray-800); display: flex; align-items: flex-start; gap: 0.5rem; padding-right: 4.5rem; }
         
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
@@ -744,10 +743,15 @@
                 }
 
                 if (url) {
-                    if (ext === 'pdf') {
+                    // DETECTOR INTELIGENTE DE DISPOSITIVOS
+                    const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
+
+                    if (ext === 'pdf' && !isMobileOrTablet) {
+                        // Modo Teatro para ordenadores (PC/Mac)
                         document.getElementById('pdfIframe').src = url;
                         openModal('pdfModal');
                     } else {
+                        // Las tablets y móviles abren el visor nativo de pantalla completa (mejor rendimiento)
                         window.open(url, '_blank');
                     }
                 }
@@ -921,7 +925,7 @@
             const isNew = (new Date() - new Date(s.uploadDate)) < 172800000; 
             const newBadgeHtml = isNew ? `<div class="badge-new">¡NUEVO!</div>` : '';
 
-            // ⭐ FAVORITO (SVG HUECO O RELLENO)
+            // ⭐ FAVORITO (SVG HUECO O RELLENO CON MARGEN)
             const isFav = myFavorites.includes(s.id);
             const starSvg = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="${isFav ? 'currentColor' : 'none'}" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
             const starHtml = `<button type="button" class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${s.id}', event)" title="Favorito">${starSvg}</button>`;
@@ -939,7 +943,7 @@
                     </div>
                     <div style="flex:1; overflow:hidden;">
                         <div class="session-title">
-                            <span>${escapeHtml(s.title)}</span> 
+                            <span style="overflow:hidden; text-overflow:ellipsis;">${escapeHtml(s.title)}</span> 
                             ${starHtml}
                         </div>
                         <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()} • ${typeLabel}</p>
