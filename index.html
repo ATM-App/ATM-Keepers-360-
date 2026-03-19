@@ -30,9 +30,15 @@
             --gray-700: #e5e7eb; --gray-800: #f3f4f6; --gray-900: #f9fafb;
             --atm-blue: #151b3d;
         }
-
-        /* Correcciones de visibilidad para Modo Oscuro */
         body.dark-mode .folder-icon { color: var(--gray-400) !important; }
+
+        /* 📜 CUSTOM SCROLLBAR (PREMIUM) */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--gray-300); border-radius: 10px; transition: 0.3s; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--atm-red); }
+        body.dark-mode ::-webkit-scrollbar-thumb { background: var(--gray-600); }
+        body.dark-mode ::-webkit-scrollbar-thumb:hover { background: var(--atm-red); }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Open Sans', sans-serif; background: var(--gray-100); color: var(--gray-800); min-height: 100vh; overflow-x: hidden; margin: 0; transition: background 0.3s, color 0.3s; }
@@ -102,19 +108,32 @@
         .btn-logout:hover { background: rgba(255, 255, 255, 0.2); }
         
         .main-content { flex: 1; margin-left: 280px; min-height: 100vh; display: flex; flex-direction: column; transition: background 0.3s; }
-        .main-header { background: var(--white); padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1.5rem; box-shadow: var(--shadow); position: sticky; top: 0; z-index: 50; transition: 0.3s; }
+        
+        /* ✨ GLASSMORPHISM HEADER */
+        .main-header { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding: 1.5rem 2rem; display: flex; align-items: center; gap: 1.5rem; position: sticky; top: 0; z-index: 50; transition: 0.3s; 
+        }
+        body.dark-mode .main-header {
+            background: rgba(31, 41, 55, 0.85);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
         .header-title { flex: 1; display: flex; flex-direction: column; }
         .header-title h1 { font-size: 1.5rem; }
         .header-title p { color: var(--gray-500); font-size: 0.9rem; margin-top: 0.25rem; margin-bottom: 0; }
         
-        /* 🔍 BUSCADOR INTELIGENTE - LUPA ARREGLADA */
+        /* Buscador */
         .search-bar { display: flex; align-items: center; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 9999px; padding: 0.5rem 1rem; width: 100%; max-width: 350px; transition: 0.3s; }
         .search-bar:focus-within { border-color: var(--atm-red); box-shadow: 0 0 0 2px rgba(203,53,36,0.1); background: var(--white); }
         .search-bar input { border: none; background: transparent; outline: none; width: 100%; color: var(--gray-800); font-size: 0.9rem; margin-left: 0.5rem; }
         
         .header-actions { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
         .menu-toggle { display: none; background: none; border: none; padding: 0.5rem; cursor: pointer; color: var(--gray-800); }
-        .content-area { flex: 1; padding: 2rem; background: var(--gray-100); transition: 0.3s; }
+        .content-area { flex: 1; padding: 2rem; background: transparent; transition: 0.3s; }
         
         /* Breadcrumbs y Carpetas */
         .breadcrumbs { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1.5rem; font-size: 0.95rem; font-weight: 500; flex-wrap: wrap; }
@@ -128,23 +147,24 @@
         .folder-icon { width: 32px; height: 32px; color: var(--atm-blue); transition: 0.3s; }
         .folder-name { font-weight: 600; font-size: 1.05rem; flex: 1; color: var(--gray-800); }
         
+        /* Indicadores Drag & Drop */
         .folder-card[draggable="true"] { cursor: grab; }
         .folder-card[draggable="true"]:active { cursor: grabbing; }
         .folder-card.drag-over { border-left: 4px dashed var(--atm-red); opacity: 0.8; }
 
+        /* 🏷️ SISTEMA DE ETIQUETAS (Clickable) */
         .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; }
         .session-card { background: var(--white); border-radius: var(--radius-lg); box-shadow: var(--shadow); overflow: hidden; transition: 0.3s; display: flex; flex-direction: column; }
         .session-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
         .session-header { padding: 1.25rem; border-bottom: 1px solid var(--gray-100); display: flex; align-items: flex-start; gap: 1rem; flex: 1; }
         .session-icon { width: 50px; height: 50px; background: rgba(203, 53, 36, 0.1); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .session-icon svg { width: 24px; height: 24px; color: var(--atm-red); }
-        .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; word-break: break-word; }
+        .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; word-break: break-word; color: var(--gray-800); }
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; }
         
-        /* 📊 ESTADÍSTICAS - Corregidas para Dark Mode */
-        .chart-container { background: var(--white); padding: 1.5rem; border-radius: var(--radius-lg); box-shadow: var(--shadow); margin-bottom: 1.5rem; }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; }
+        .tag-pill { display:inline-block; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; color:white; cursor:pointer; transition:0.2s; border: 1px solid transparent; }
+        .tag-pill:hover { transform: scale(1.05); opacity: 0.9; }
 
         /* Upload */
         .upload-container { max-width: 600px; margin: 0 auto; background: var(--white); padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow); transition: 0.3s; }
@@ -426,14 +446,12 @@
         let currentUser = null, currentUserData = null, currentFolderId = null;
         let usersData = [], sessionsData = [], foldersData = [], tagsData = [];
         let deletingId = null, deletingType = null, editingUserId = null;
-        let searchQuery = "";
+        let searchQuery = "", activeTagFilter = null; // 🏷️ Filtro interactivo
         let db, auth, storage;
         let coachChartInstance = null, tagsChartInstance = null;
 
         function initFirebase() { 
-            db = firebase.firestore(); 
-            auth = firebase.auth(); 
-            storage = firebase.storage();
+            db = firebase.firestore(); auth = firebase.auth(); storage = firebase.storage();
         }
 
         // ==================== MODO OSCURO ====================
@@ -538,7 +556,6 @@
                 if(document.getElementById('pageTitle').textContent === 'Sesiones de Entrenamiento') renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
             });
-            // Escuchar Etiquetas Dinámicas
             db.collection('tags').onSnapshot(s => {
                 tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
                 if(document.getElementById('pageTitle').textContent === 'Subir Archivo') renderUpload();
@@ -650,14 +667,29 @@
             } catch(e) { showToast('Error al eliminar', 'error'); }
         };
 
-        // ==================== NAVEGACIÓN Y BUSCADOR ====================
+        // ==================== NAVEGACIÓN Y BUSCADOR (CON ETIQUETAS) ====================
         function handleSearch() {
             searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            renderDashboard();
+        }
+        
+        function toggleTagFilter(tagName, event) {
+            if(event) event.stopPropagation(); // Para que no abra la carpeta sin querer
+            if(activeTagFilter === tagName) activeTagFilter = null; // Quitar filtro
+            else activeTagFilter = tagName; // Poner filtro
+            renderDashboard();
+        }
+
+        function clearFilters() {
+            activeTagFilter = null;
+            searchQuery = "";
+            document.getElementById('searchInput').value = "";
             renderDashboard();
         }
 
         function showPage(p) {
             currentFolderId = null;
+            activeTagFilter = null;
             searchQuery = ""; 
             document.getElementById('searchInput').value = "";
             
@@ -669,7 +701,6 @@
             if (p === 'dashboard') {
                 document.getElementById('pageTitle').textContent = 'Sesiones de Entrenamiento';
                 document.getElementById('pageSubtitle').textContent = 'Explora el contenido';
-                // BOTONES CABECERA ARREGLADOS
                 dynActions.innerHTML = `
                     <button class="btn btn-secondary" style="white-space:nowrap;" onclick="openFolderModal()">📁 Carpeta</button> 
                     <button class="btn btn-primary" style="white-space:nowrap;" onclick="showPage('upload')">📄 Archivo</button>`;
@@ -703,8 +734,61 @@
             if (window.isDragging) return;
             currentFolderId = id; 
             searchQuery = "";
+            activeTagFilter = null;
             document.getElementById('searchInput').value = "";
             renderDashboard(); 
+        }
+
+        // Función auxiliar para dibujar tarjetas de sesión y ahorrar código
+        function renderSessionCard(s, idx) {
+            const uploader = usersData.find(u => u.id === s.uploadedBy);
+            const uploaderAvatar = uploader?.profileImage ? `<img src="${uploader.profileImage}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : `<div class="user-avatar" style="width:24px;height:24px;font-size:0.7rem;border-radius:50%;">${getInitials(uploader?.fullName || 'User')}</div>`;
+            const uploaderName = uploader?.fullName || 'Usuario Desconocido';
+            const canDelete = currentUserData?.role === 'admin' || s.uploadedBy === currentUser.uid;
+            const deleteBtnHtml = canDelete ? `<button class="btn btn-secondary" style="padding:0.5rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="confirmDelete('${s.id}', 'session')" title="Eliminar">🗑️</button>` : '';
+
+            const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
+            const isViewable = ['pdf', 'ppt', 'pptx'].includes(ext);
+            const typeLabel = ext.toUpperCase();
+
+            let buttonsHtml = '';
+            if (isViewable) buttonsHtml += `<button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewFile('${s.id}')">Ver</button>`;
+            buttonsHtml += `<button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadFile('${s.id}')">Descargar</button>`;
+
+            // Etiquetas Dinámicas Clickables
+            let tagsHtml = '';
+            if (s.tags && s.tags.length > 0) {
+                tagsHtml = `<div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.3rem;">` + s.tags.map(t => {
+                    const tagObj = tagsData.find(x => x.name === t);
+                    const bgColor = tagObj ? tagObj.color : '#6b7280';
+                    return `<span class="tag-pill" style="background-color:${bgColor}; ${activeTagFilter===t ? 'border-color:var(--gray-800); box-shadow:0 0 0 2px '+bgColor+';' : ''}" onclick="toggleTagFilter('${escapeHtml(t)}', event)">${escapeHtml(t)}</span>`;
+                }).join('') + `</div>`;
+            }
+
+            const animDelay = idx * 0.05;
+
+            return `
+            <div class="session-card animate-entry" style="animation-delay: ${animDelay}s;">
+                <div class="session-header">
+                    <div class="session-icon" style="flex-direction:column;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;color:var(--atm-red);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline></svg>
+                        <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">${typeLabel}</span>
+                    </div>
+                    <div style="flex:1; overflow:hidden;">
+                        <div class="session-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--gray-800);">${escapeHtml(s.title)}</div>
+                        <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()} • ${typeLabel}</p>
+                        ${tagsHtml}
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
+                            ${uploaderAvatar}
+                            <span style="font-size:0.8rem; color:var(--gray-500);">Subido por <strong>${escapeHtml(uploaderName)}</strong></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="session-footer" style="display:flex; gap:0.5rem;">
+                    ${buttonsHtml}
+                    ${deleteBtnHtml}
+                </div>
+            </div>`;
         }
 
         function renderDashboard() {
@@ -714,11 +798,28 @@
             let visibleFolders = [];
             let visibleSessions = [];
 
-            if (searchQuery.length > 0) {
-                html += `<h3 style="margin-bottom:1.5rem; color:var(--atm-blue);">Resultados de búsqueda para "${escapeHtml(searchQuery)}"</h3>`;
-                visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && f.name.toLowerCase().includes(searchQuery));
-                visibleSessions = sessionsData.filter(s => isFolderAllowed(s.folderId) && (s.title.toLowerCase().includes(searchQuery) || (s.tags && s.tags.join(' ').toLowerCase().includes(searchQuery))));
+            // 🏷️ FILTROS (Buscador o Etiqueta)
+            if (searchQuery.length > 0 || activeTagFilter !== null) {
+                
+                let titleMsg = `Resultados ${activeTagFilter ? 'de la etiqueta: <span class="tag-pill" style="background:var(--atm-red)">'+escapeHtml(activeTagFilter)+'</span>' : ''} ${searchQuery ? 'para "'+escapeHtml(searchQuery)+'"' : ''}`;
+                
+                html += `
+                <div style="margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+                    <h3 style="color:var(--atm-blue); margin:0;">${titleMsg}</h3>
+                    <button class="btn btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.8rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="clearFilters()">Limpiar Filtros ✕</button>
+                </div>`;
+                
+                visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && (!searchQuery || f.name.toLowerCase().includes(searchQuery)));
+                
+                visibleSessions = sessionsData.filter(s => {
+                    if (!isFolderAllowed(s.folderId)) return false;
+                    const matchSearch = !searchQuery || s.title.toLowerCase().includes(searchQuery) || (s.tags && s.tags.join(' ').toLowerCase().includes(searchQuery));
+                    const matchTag = !activeTagFilter || (s.tags && s.tags.includes(activeTagFilter));
+                    return matchSearch && matchTag;
+                });
+
             } else {
+                // NAVEGACIÓN NORMAL
                 html += `<div class="breadcrumbs"><span class="breadcrumb-item" onclick="navigateToFolder(null)">🏠 Inicio</span>`;
                 if (currentFolderId) {
                     let path = [], curr = foldersData.find(f => f.id === currentFolderId);
@@ -727,20 +828,35 @@
                 }
                 html += `</div>`;
 
+                // ⏱️ AÑADIDO RECIENTEMENTE (Solo en Inicio)
+                if (currentFolderId === null) {
+                    const recentSessions = sessionsData
+                        .filter(s => isFolderAllowed(s.folderId))
+                        .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate))
+                        .slice(0, 4); // Últimas 4
+
+                    if (recentSessions.length > 0) {
+                        html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">⏱️ Añadido Recientemente</h3><div class="sessions-grid" style="margin-bottom: 2rem;">`;
+                        recentSessions.forEach((s, idx) => { html += renderSessionCard(s, idx); });
+                        html += `</div><hr style="border:none; border-top:1px solid var(--gray-200); margin-bottom:2rem;">`;
+                    }
+                }
+
                 visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
                 visibleFolders.sort((a, b) => (a.order || 0) - (b.order || 0));
                 visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId);
             }
 
+            // RENDER CARPETAS
             if (visibleFolders.length > 0) {
-                if (currentUserData?.role === 'admin' && searchQuery.length === 0) {
+                if (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeTagFilter) {
                     html += `<p style="font-size:0.85rem; color:var(--gray-500); margin-bottom: 1rem;">💡 Puedes arrastrar y soltar las carpetas para cambiar su orden.</p>`;
                 }
                 html += `<div class="folders-grid">`;
                 visibleFolders.forEach((f, idx) => {
                     const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
                     const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
-                    const dragProps = (currentUserData?.role === 'admin' && searchQuery.length === 0) ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="dragEnd(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
+                    const dragProps = (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeTagFilter) ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="dragEnd(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
                     const animDelay = idx * 0.05;
                     
                     html += `
@@ -755,58 +871,10 @@
                 html += `</div>`;
             }
 
+            // RENDER SESIONES (En Carpeta)
             if (visibleSessions.length > 0) {
                 html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos Guardados</h3><div class="sessions-grid">`;
-                visibleSessions.forEach((s, idx) => {
-                    const uploader = usersData.find(u => u.id === s.uploadedBy);
-                    const uploaderAvatar = uploader?.profileImage ? `<img src="${uploader.profileImage}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : `<div class="user-avatar" style="width:24px;height:24px;font-size:0.7rem;border-radius:50%;">${getInitials(uploader?.fullName || 'User')}</div>`;
-                    const uploaderName = uploader?.fullName || 'Usuario Desconocido';
-                    const canDelete = currentUserData?.role === 'admin' || s.uploadedBy === currentUser.uid;
-                    const deleteBtnHtml = canDelete ? `<button class="btn btn-secondary" style="padding:0.5rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="confirmDelete('${s.id}', 'session')" title="Eliminar">🗑️</button>` : '';
-
-                    const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
-                    const isViewable = ['pdf', 'ppt', 'pptx'].includes(ext);
-                    const typeLabel = ext.toUpperCase();
-
-                    let buttonsHtml = '';
-                    if (isViewable) buttonsHtml += `<button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewFile('${s.id}')">Ver</button>`;
-                    buttonsHtml += `<button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadFile('${s.id}')">Descargar</button>`;
-
-                    // Etiquetas Dinámicas
-                    let tagsHtml = '';
-                    if (s.tags && s.tags.length > 0) {
-                        tagsHtml = `<div style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.3rem;">` + s.tags.map(t => {
-                            const tagObj = tagsData.find(x => x.name === t);
-                            const bgColor = tagObj ? tagObj.color : '#6b7280';
-                            return `<span style="display:inline-block; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; color:white; background-color:${bgColor};">${escapeHtml(t)}</span>`;
-                        }).join('') + `</div>`;
-                    }
-
-                    const animDelay = idx * 0.05;
-
-                    html += `
-                    <div class="session-card animate-entry" style="animation-delay: ${animDelay}s;">
-                        <div class="session-header">
-                            <div class="session-icon" style="flex-direction:column;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;color:var(--atm-red);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14,2 14,8 20,8"></polyline></svg>
-                                <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">${typeLabel}</span>
-                            </div>
-                            <div style="flex:1; overflow:hidden;">
-                                <div class="session-title" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--gray-800);">${escapeHtml(s.title)}</div>
-                                <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()} • ${typeLabel}</p>
-                                ${tagsHtml}
-                                <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
-                                    ${uploaderAvatar}
-                                    <span style="font-size:0.8rem; color:var(--gray-500);">Subido por <strong>${escapeHtml(uploaderName)}</strong></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="session-footer" style="display:flex; gap:0.5rem;">
-                            ${buttonsHtml}
-                            ${deleteBtnHtml}
-                        </div>
-                    </div>`;
-                });
+                visibleSessions.forEach((s, idx) => { html += renderSessionCard(s, idx); });
                 html += `</div>`;
             }
 
@@ -852,7 +920,6 @@
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id));
             
-            // Render Etiquetas Dinámicas
             let tagsHtml = tagsData.map(t => `
                 <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer; color:var(--gray-800);">
                     <input type="checkbox" value="${escapeHtml(t.name)}" class="tag-check"> 
@@ -1031,7 +1098,7 @@
                 html += `
                 <div class="folder-card" style="cursor:default;">
                     <div style="flex:1">
-                        <div class="folder-name" style="color:var(--gray-800);">${escapeHtml(f.name)}</div>
+                        <div class="folder-name">${escapeHtml(f.name)}</div>
                         <div style="font-size:0.85rem; color:var(--gray-500); margin-top:0.25rem;">${assignedUser ? escapeHtml(assignedUser.fullName) : 'Sin asignar'}</div>
                     </div>
                     <div class="action-buttons">
