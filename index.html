@@ -9,6 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icono.png" type="image/png">
     <link rel="apple-touch-icon" href="icono.png">
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -91,7 +92,7 @@
         
         /* App Layout */
         .app-container { flex-direction: row; }
-        .sidebar { width: 280px; background: var(--atm-blue); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; z-index: 100; transition: 0.3s; }
+        .sidebar { width: 280px; background: var(--atm-blue); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; height: 100dvh; z-index: 100; transition: 0.3s; }
         .sidebar-header { padding: 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid rgba(255, 255, 255, 0.1); }
         .sidebar-logo { width: 48px; height: 48px; border-radius: 8px; background: white; padding: 4px; object-fit: contain; }
         .sidebar-nav { flex: 1; padding: 1rem 0; overflow-y: auto; }
@@ -100,7 +101,8 @@
         .nav-item.active { background: rgba(255, 255, 255, 0.15); color: white; border-left: 3px solid var(--atm-red); }
         .nav-icon { width: 22px; height: 22px; }
         
-        .sidebar-footer { padding: 1rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+        /* Modificado: Flex shrink y margen inferior para tablets */
+        .sidebar-footer { padding: 1rem 1.5rem 2rem 1.5rem; border-top: 1px solid rgba(255, 255, 255, 0.1); flex-shrink: 0; }
         .user-info { display: flex; align-items: center; gap: 0.875rem; margin-bottom: 1rem; }
         .user-avatar { width: 42px; height: 42px; min-width: 42px; border-radius: 50%; background: var(--atm-red); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.9rem; color: white; overflow: hidden; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -287,7 +289,7 @@
     <div class="login-container screen" id="loginPage">
         <div class="login-card">
             <div class="login-header">
-                <img src="icono.png" alt="ATM Keepers" class="logo-escudo" onerror="this.outerHTML='<div style=\'width:120px;height:120px;border-radius:12px;background:var(--atm-red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;\'><span style=\'font-size:48px;font-weight:bold;color:white;\'>ATM</span></div>'">
+                <img src="escudo.png" alt="ATM" class="logo-escudo" onerror="this.outerHTML='<div style=\'width:120px;height:120px;border-radius:12px;background:var(--atm-red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;\'><span style=\'font-size:48px;font-weight:bold;color:white;\'>ATM</span></div>'">
                 <h1>ATM Keepers 360</h1>
                 <p class="subtitle">Plataforma de Entrenadores de Porteros</p>
             </div>
@@ -310,7 +312,7 @@
         <div class="sidebar-overlay" id="sidebarOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:99;" onclick="toggleMobileMenu()"></div>
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <img src="icono.png" alt="Escudo" class="sidebar-logo">
+                <img src="escudo.png" alt="Escudo" class="sidebar-logo">
                 <h2>ATM Keepers 360</h2>
             </div>
             <nav class="sidebar-nav">
@@ -932,7 +934,6 @@
             const animDelay = idx * 0.05;
             const listViewClass = currentViewMode === 'list' ? 'list-view' : '';
 
-            // EL MARGEN DE PADDING-RIGHT Y LA ESTRELLA PEGADA ESTÁN AQUÍ
             return `
             <div class="session-card animate-entry ${listViewClass}" style="animation-delay: ${animDelay}s;">
                 ${newBadgeHtml}
