@@ -6,7 +6,9 @@
     <meta name="description" content="ATM Keepers 360 - Plataforma de Entrenadores">
     <meta name="theme-color" content="#CB3524">
     <title>ATM Keepers 360</title>
-    <link rel="icon" href="escudo.png" type="image/png">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icono.png" type="image/png">
+    <link rel="apple-touch-icon" href="icono.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -285,7 +287,7 @@
     <div class="login-container screen" id="loginPage">
         <div class="login-card">
             <div class="login-header">
-                <img src="escudo.png" alt="ATM" class="logo-escudo" onerror="this.outerHTML='<div style=\'width:120px;height:120px;border-radius:12px;background:var(--atm-red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;\'><span style=\'font-size:48px;font-weight:bold;color:white;\'>ATM</span></div>'">
+                <img src="icono.png" alt="ATM Keepers" class="logo-escudo" onerror="this.outerHTML='<div style=\'width:120px;height:120px;border-radius:12px;background:var(--atm-red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;\'><span style=\'font-size:48px;font-weight:bold;color:white;\'>ATM</span></div>'">
                 <h1>ATM Keepers 360</h1>
                 <p class="subtitle">Plataforma de Entrenadores de Porteros</p>
             </div>
@@ -308,7 +310,7 @@
         <div class="sidebar-overlay" id="sidebarOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:99;" onclick="toggleMobileMenu()"></div>
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <img src="escudo.png" alt="Escudo" class="sidebar-logo">
+                <img src="icono.png" alt="Escudo" class="sidebar-logo">
                 <h2>ATM Keepers 360</h2>
             </div>
             <nav class="sidebar-nav">
@@ -743,15 +745,12 @@
                 }
 
                 if (url) {
-                    // DETECTOR INTELIGENTE DE DISPOSITIVOS
                     const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024;
 
                     if (ext === 'pdf' && !isMobileOrTablet) {
-                        // Modo Teatro para ordenadores (PC/Mac)
                         document.getElementById('pdfIframe').src = url;
                         openModal('pdfModal');
                     } else {
-                        // Las tablets y móviles abren el visor nativo de pantalla completa (mejor rendimiento)
                         window.open(url, '_blank');
                     }
                 }
@@ -925,7 +924,7 @@
             const isNew = (new Date() - new Date(s.uploadDate)) < 172800000; 
             const newBadgeHtml = isNew ? `<div class="badge-new">¡NUEVO!</div>` : '';
 
-            // ⭐ FAVORITO (SVG HUECO O RELLENO CON MARGEN)
+            // ⭐ FAVORITO (SVG HUECO O RELLENO CON MARGEN PROTECTOR)
             const isFav = myFavorites.includes(s.id);
             const starSvg = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="${isFav ? 'currentColor' : 'none'}" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
             const starHtml = `<button type="button" class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${s.id}', event)" title="Favorito">${starSvg}</button>`;
@@ -933,6 +932,7 @@
             const animDelay = idx * 0.05;
             const listViewClass = currentViewMode === 'list' ? 'list-view' : '';
 
+            // EL MARGEN DE PADDING-RIGHT Y LA ESTRELLA PEGADA ESTÁN AQUÍ
             return `
             <div class="session-card animate-entry ${listViewClass}" style="animation-delay: ${animDelay}s;">
                 ${newBadgeHtml}
