@@ -167,10 +167,10 @@
         .badge-new { position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; font-size: 0.65rem; font-weight: bold; padding: 0.3rem 0.6rem; border-radius: 9999px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.4); animation: pulseBadge 2s infinite; pointer-events: none; z-index: 10; border: 2px solid var(--white); }
         @keyframes pulseBadge { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
-        /* ⭐ BOTÓN FAVORITO */
-        .star-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--gray-300); transition: 0.2s; padding: 0.2rem; display: flex; align-items: center; justify-content: center; margin-left: auto; }
-        .star-btn.active { color: #f59e0b; /* Dorado */ }
-        .star-btn:hover { transform: scale(1.2); }
+        /* ⭐ BOTÓN FAVORITO CORREGIDO */
+        .star-btn { background: none; border: none; cursor: pointer; color: var(--gray-400); transition: 0.2s; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+        .star-btn.active { color: #f59e0b; }
+        .star-btn:hover { transform: scale(1.15); color: #f59e0b; }
 
         /* 🔲 VISTA GRID VS LISTA */
         .sessions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
@@ -181,7 +181,10 @@
         .session-header { padding: 1.25rem; border-bottom: 1px solid var(--gray-100); display: flex; align-items: flex-start; gap: 1rem; flex: 1; }
         .session-icon { width: 50px; height: 50px; background: rgba(203, 53, 36, 0.1); border-radius: var(--radius); display: flex; flex-direction: column; align-items: center; justify-content: center; }
         .session-icon svg { width: 24px; height: 24px; color: var(--atm-red); }
-        .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; word-break: break-word; color: var(--gray-800); display: flex; align-items: center; justify-content: space-between; }
+        
+        /* CORRECCIÓN: TÍTULO SEPARADO DEL BADGE */
+        .session-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.3rem; word-break: break-word; color: var(--gray-800); display: flex; align-items: flex-start; gap: 0.5rem; padding-right: 4.5rem; }
+        
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; }
         
@@ -497,11 +500,11 @@
         
         let searchQuery = "", activeTagFilter = null; 
         let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
-        let myFavorites = JSON.parse(localStorage.getItem('atm_favorites')) || []; // ⭐ Favoritos locales
+        let myFavorites = JSON.parse(localStorage.getItem('atm_favorites')) || []; 
         
         let db, auth, storage;
         let coachChartInstance = null, tagsChartInstance = null;
-        let weatherInitialized = false; // Evitar llamadas repetidas a la API del tiempo
+        let weatherInitialized = false; 
 
         function initFirebase() { 
             db = firebase.firestore(); auth = firebase.auth(); storage = firebase.storage();
@@ -543,12 +546,10 @@
                     const lat = position.coords.latitude;
                     const lon = position.coords.longitude;
                     try {
-                        // 1. Obtener Temperatura (Open-Meteo API Gratis)
                         const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                         const weatherData = await weatherRes.json();
                         const temp = Math.round(weatherData.current_weather.temperature);
                         
-                        // 2. Obtener Ciudad (Nominatim OSM Gratis)
                         const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                         const geoData = await geoRes.json();
                         let city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || 'Localización actual';
@@ -591,7 +592,7 @@
         function openModal(id) { document.getElementById(id).classList.add('show'); }
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
         function closePdfModal() {
-            document.getElementById('pdfIframe').src = ''; // Cortar iframe por si acaso
+            document.getElementById('pdfIframe').src = ''; 
             closeModal('pdfModal');
         }
         function toggleMobileMenu() { 
@@ -725,7 +726,7 @@
             } catch(err) { showToast('Error al ordenar', 'error'); }
         }
 
-        // ==================== VISUALIZAR Y DESCARGAR ARCHIVOS (MODO TEATRO) ====================
+        // ==================== VISUALIZAR Y DESCARGAR ARCHIVOS ====================
         function viewFile(id) { 
             const s = sessionsData.find(x => x.id === id); 
             if (s) {
@@ -743,7 +744,6 @@
                 }
 
                 if (url) {
-                    // 🎭 MODO TEATRO PARA PDFs. Los PowerPoint el navegador los descarga igual.
                     if (ext === 'pdf') {
                         document.getElementById('pdfIframe').src = url;
                         openModal('pdfModal');
@@ -840,8 +840,8 @@
             document.getElementById('weatherWidget').style.display = (p === 'dashboard') ? 'flex' : 'none';
 
             if (p === 'dashboard') {
-                updateHeaderGreeting(); // ☀️ Saludo Inteligente
-                initWeatherWidget();    // ⛅ Inicializar Tiempo
+                updateHeaderGreeting(); 
+                initWeatherWidget();    
                 document.getElementById('pageSubtitle').textContent = 'Explora y gestiona las carpetas del equipo';
                 
                 dynActions.innerHTML = `
@@ -921,9 +921,10 @@
             const isNew = (new Date() - new Date(s.uploadDate)) < 172800000; 
             const newBadgeHtml = isNew ? `<div class="badge-new">¡NUEVO!</div>` : '';
 
-            // ⭐ FAVORITO
+            // ⭐ FAVORITO (SVG HUECO O RELLENO)
             const isFav = myFavorites.includes(s.id);
-            const starHtml = `<button class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${s.id}', event)" title="Favorito">⭐</button>`;
+            const starSvg = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="${isFav ? 'currentColor' : 'none'}" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
+            const starHtml = `<button type="button" class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${s.id}', event)" title="Favorito">${starSvg}</button>`;
 
             const animDelay = idx * 0.05;
             const listViewClass = currentViewMode === 'list' ? 'list-view' : '';
@@ -937,7 +938,10 @@
                         <span style="font-size:0.6rem; font-weight:bold; color:var(--atm-blue); margin-top:2px;">${typeLabel}</span>
                     </div>
                     <div style="flex:1; overflow:hidden;">
-                        <div class="session-title">${escapeHtml(s.title)} ${starHtml}</div>
+                        <div class="session-title">
+                            <span>${escapeHtml(s.title)}</span> 
+                            ${starHtml}
+                        </div>
                         <p class="session-meta">${new Date(s.uploadDate).toLocaleDateString()} • ${typeLabel}</p>
                         ${tagsHtml}
                         <div style="display:flex; align-items:center; gap:0.5rem; margin-top:0.5rem;">
@@ -960,7 +964,6 @@
             let visibleFolders = [];
             let visibleSessions = [];
 
-            // 🏷️ FILTROS (Buscador o Etiqueta)
             if (searchQuery.length > 0 || activeTagFilter !== null) {
                 
                 let titleMsg = `Resultados ${activeTagFilter ? 'de la etiqueta: <span class="tag-pill" style="background:var(--atm-red); margin-left:0.5rem;">'+escapeHtml(activeTagFilter)+'</span>' : ''} ${searchQuery ? 'para "'+escapeHtml(searchQuery)+'"' : ''}`;
@@ -980,7 +983,6 @@
                 });
 
             } else {
-                // NAVEGACIÓN NORMAL
                 html += `<div class="breadcrumbs"><span class="breadcrumb-item" onclick="navigateToFolder(null)">🏠 Inicio</span>`;
                 if (currentFolderId) {
                     let path = [], curr = foldersData.find(f => f.id === currentFolderId);
@@ -989,10 +991,7 @@
                 }
                 html += `</div>`;
 
-                // ⭐ FAVORITOS Y RECIENTES (Solo en Inicio)
                 if (currentFolderId === null) {
-                    
-                    // Favoritos
                     const favSessions = sessionsData.filter(s => isFolderAllowed(s.folderId) && myFavorites.includes(s.id));
                     if (favSessions.length > 0) {
                         html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--atm-blue)">⭐ Tus Favoritos</h3>`;
@@ -1001,9 +1000,8 @@
                         html += `</div><hr style="border:none; border-top:1px solid var(--gray-200); margin-bottom:2rem;">`;
                     }
 
-                    // Recientes
                     const recentSessions = sessionsData
-                        .filter(s => isFolderAllowed(s.folderId) && !myFavorites.includes(s.id)) // No repetir si ya es fav
+                        .filter(s => isFolderAllowed(s.folderId) && !myFavorites.includes(s.id))
                         .sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate))
                         .slice(0, 4); 
 
@@ -1018,11 +1016,9 @@
                 visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
                 visibleFolders.sort((a, b) => (a.order || 0) - (b.order || 0));
                 
-                // Las sesiones que ya se mostraron en Favoritos no las repetimos en la vista general
                 visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId && (currentFolderId !== null || !myFavorites.includes(s.id)));
             }
 
-            // RENDER CARPETAS
             if (visibleFolders.length > 0) {
                 if (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeTagFilter) {
                     html += `<p style="font-size:0.85rem; color:var(--gray-500); margin-bottom: 1rem;">💡 Puedes arrastrar y soltar las carpetas para cambiar su orden.</p>`;
@@ -1031,6 +1027,7 @@
                 visibleFolders.forEach((f, idx) => {
                     const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
                     const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
+                    
                     const dragProps = (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeTagFilter) ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="dragEnd(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
                     const animDelay = idx * 0.05;
                     
@@ -1046,7 +1043,6 @@
                 html += `</div>`;
             }
 
-            // RENDER SESIONES
             if (visibleSessions.length > 0) {
                 html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos Guardados</h3>`;
                 html += `<div class="${currentViewMode === 'list' ? 'sessions-list' : 'sessions-grid'}">`;
@@ -1153,7 +1149,6 @@
             document.getElementById('upForm').onsubmit = e => {
                 e.preventDefault();
                 const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
-                
                 btn.disabled = true; btn.textContent = "Subiendo (0%)...";
                 
                 const checkedTags = Array.from(document.querySelectorAll('.tag-check:checked')).map(cb => cb.value);
