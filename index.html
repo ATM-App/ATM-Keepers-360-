@@ -64,6 +64,36 @@
         /* 🔄 PULL TO REFRESH */
         #pullToRefresh { position: absolute; top: -60px; left: 0; width: 100%; display: flex; justify-content: center; align-items: center; height: 60px; z-index: 100; transition: transform 0.2s ease; pointer-events: none;}
         #ptrSpinner { width: 36px; height: 36px; border-radius: 50%; box-shadow: var(--shadow-lg); background: white; padding: 4px; object-fit: contain; }
+
+        /* 🏝️ ISLA DINÁMICA (NOTIFICACIONES) */
+        .dynamic-island { position: fixed; top: 1rem; left: 50%; transform: translateX(-50%) translateY(-100px); background: #000; color: #fff; padding: 0.6rem 1.5rem; border-radius: 99px; display: flex; align-items: center; gap: 0.75rem; z-index: 4000; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s ease; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); font-weight: 500; font-size: 0.95rem; opacity: 0; pointer-events: none; }
+        .dynamic-island.show { transform: translateX(-50%) translateY(0); opacity: 1; pointer-events: auto; }
+        .dynamic-island.success .di-icon { color: #4ade80; }
+        .dynamic-island.error .di-icon { color: #f87171; }
+        .dynamic-island.info .di-icon { color: #60a5fa; }
+
+        /* 🕹️ JOYSTICK DE CAMPO (FAB) */
+        .fab-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; display: flex; flex-direction: column-reverse; align-items: center; gap: 0.75rem; }
+        .fab-main { width: 56px; height: 56px; border-radius: 50%; background: var(--atm-red); color: white; border: none; cursor: pointer; box-shadow: var(--shadow-lg); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; }
+        .fab-main:hover { transform: scale(1.05); background: var(--atm-red-dark); }
+        .fab-container.active .fab-main { transform: rotate(45deg); background: var(--atm-blue); }
+        .fab-menu { display: flex; flex-direction: column; gap: 0.75rem; opacity: 0; pointer-events: none; transform: translateY(20px); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); align-items: center; }
+        .fab-container.active .fab-menu { opacity: 1; pointer-events: auto; transform: translateY(0); }
+        .fab-item { width: 44px; height: 44px; border-radius: 50%; background: var(--white); color: var(--atm-blue); border: none; cursor: pointer; box-shadow: var(--shadow); transition: 0.2s; display: flex; align-items: center; justify-content: center; position: relative; }
+        .fab-item:hover { transform: scale(1.1); background: var(--gray-50); color: var(--atm-red); }
+        body.dark-mode .fab-item { background: var(--gray-800); color: var(--white); }
+        .fab-item::after { content: attr(data-tooltip); position: absolute; right: 55px; background: rgba(0,0,0,0.75); color: white; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none; transition: 0.2s; }
+        .fab-item:hover::after { opacity: 1; }
+
+        /* 📱 POPUP INSTALACIÓN VIP */
+        .install-popup { position: fixed; bottom: -100%; left: 0; width: 100%; background: var(--white); padding: 2.5rem 2rem; border-top-left-radius: 24px; border-top-right-radius: 24px; box-shadow: 0 -10px 40px -5px rgba(0,0,0,0.2); z-index: 5000; transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1); text-align: center; }
+        .install-popup.show { bottom: 0; }
+        body.dark-mode .install-popup { background: var(--gray-900); border-top: 1px solid rgba(255,255,255,0.05); }
+        .install-logo { width: 70px; height: 70px; margin-bottom: 1.5rem; animation: floatShield 3s ease-in-out infinite; border-radius: 12px; box-shadow: var(--shadow); }
+        .install-title { font-family: 'Montserrat', sans-serif; font-size: 1.25rem; font-weight: 700; color: var(--atm-blue); margin-bottom: 0.5rem; }
+        body.dark-mode .install-title { color: var(--white); }
+        .install-desc { color: var(--gray-500); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5; }
+        .install-actions { display: flex; flex-direction: column; gap: 0.75rem; }
         
         /* Login */
         .login-container { align-items: center; justify-content: center; padding: 2rem; background: linear-gradient(135deg, var(--atm-red) 0%, var(--gray-100) 50%, var(--atm-blue) 100%); }
@@ -114,7 +144,7 @@
         body.blackboard-mode .main-content { margin-left: 0; }
         body.blackboard-mode .main-header { transform: translateY(-100%); position: absolute; visibility: hidden; }
         body.blackboard-mode .content-area { padding-top: 5rem; } 
-        body.blackboard-mode .ticker-wrap { display: none !important; } /* Ocultar ticker en pizarra */
+        body.blackboard-mode .ticker-wrap { display: none !important; } 
 
         /* ✨ GLASSMORPHISM HEADER */
         .main-header { 
@@ -128,7 +158,7 @@
         .header-title h1 { font-size: 1.5rem; }
         .header-title p { color: var(--gray-500); font-size: 0.9rem; margin-top: 0.25rem; margin-bottom: 0; }
         
-        /* 📰 TICKER DE NOTICIAS (NUEVO) */
+        /* 📰 TICKER DE NOTICIAS */
         .ticker-wrap { width: 100%; background: var(--atm-blue); color: white; padding: 0.5rem 0; overflow: hidden; display: none; position: relative; z-index: 40; border-bottom: 2px solid var(--atm-red); box-shadow: var(--shadow); }
         .ticker-wrap.active { display: block; }
         .ticker-text { white-space: nowrap; display: inline-block; padding-left: 100%; animation: ticker 25s linear infinite; font-size: 0.95rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -202,11 +232,6 @@
         .tag-pill { display:inline-block; padding:0.2rem 0.6rem; border-radius:9999px; font-size:0.7rem; font-weight:600; color:white; cursor:pointer; transition:0.2s; border: 1px solid transparent; }
         .tag-pill:hover { transform: scale(1.05); opacity: 0.9; }
 
-        /* ⬇️ BOTÓN BACK TO TOP */
-        #backToTopBtn { position: fixed; bottom: 30px; right: 30px; width: 50px; height: 50px; border-radius: 50%; background: var(--atm-red); color: white; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 1000; box-shadow: var(--shadow-lg); transition: opacity 0.3s, transform 0.3s, background 0.3s; opacity: 0; transform: translateY(20px); pointer-events: none; }
-        #backToTopBtn.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        #backToTopBtn:hover { background: var(--atm-red-dark); transform: translateY(-3px); }
-
         /* Upload & Admin */
         .upload-container { max-width: 600px; margin: 0 auto; background: var(--white); padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow); transition: 0.3s; }
         .dropzone { position: relative; border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center; transition: 0.3s; background: var(--gray-50); margin-bottom: 1rem; }
@@ -251,11 +276,6 @@
         .modal-header { padding: 1.5rem; border-bottom: 1px solid var(--gray-200); display: flex; align-items: center; justify-content: space-between; }
         .modal-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray-500); }
         
-        .toast-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 3000; display: flex; flex-direction: column; gap: 0.5rem; }
-        .toast { background: var(--gray-800); color: white; padding: 1rem 1.5rem; border-radius: var(--radius); box-shadow: var(--shadow-lg); animation: slideIn 0.3s ease; font-size: 0.95rem; }
-        .toast.success { background: #059669; }
-        .toast.error { background: var(--atm-red); }
-
         @media (max-width: 1024px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.4s ease; }
             .sidebar.open { transform: translateX(0); }
@@ -282,6 +302,11 @@
     </style>
 </head>
 <body>
+
+    <div id="dynamicIsland" class="dynamic-island">
+        <span class="di-icon">ℹ️</span>
+        <span class="di-text" style="color: white; margin: 0;">Iniciando sistema...</span>
+    </div>
 
     <div class="loading-container screen active" id="loadingPage">
         <div id="skelSidebar" class="sidebar" style="background: var(--atm-blue); transform: translateX(0);">
@@ -397,11 +422,38 @@
             </header>
             <div class="content-area" id="contentArea"></div>
         </main>
+
+        <div class="fab-container" id="fabContainer">
+            <button class="fab-main" onclick="document.getElementById('fabContainer').classList.toggle('active')">
+                <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </button>
+            <div class="fab-menu">
+                <button class="fab-item" data-tooltip="Buscar" onclick="document.getElementById('searchInput').focus(); document.getElementById('fabContainer').classList.remove('active');">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </button>
+                <button class="fab-item" data-tooltip="Modo Pizarra" onclick="toggleBlackboardMode(); document.getElementById('fabContainer').classList.remove('active');">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                </button>
+                <button class="fab-item" data-tooltip="Nueva Carpeta" onclick="openFolderModal(); document.getElementById('fabContainer').classList.remove('active');">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+                </button>
+                <button class="fab-item" data-tooltip="Subir Archivo" onclick="showPage('upload'); document.getElementById('fabContainer').classList.remove('active');">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17,8 12,3 7,8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                </button>
+            </div>
+        </div>
+
     </div>
 
-    <button id="backToTopBtn" onclick="window.scrollTo({top:0, behavior:'smooth'})" title="Volver Arriba">
-        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><polyline points="18 15 12 9 6 15"></polyline></svg>
-    </button>
+    <div class="install-popup" id="installPopup">
+        <img src="escudo.png" alt="Escudo" class="install-logo">
+        <h3 class="install-title">Instala ATM Keepers 360</h3>
+        <p class="install-desc">Añade la plataforma a la pantalla de inicio de tu dispositivo para usarla a pantalla completa, sin distracciones y con el máximo rendimiento en el campo.</p>
+        <div class="install-actions">
+            <button class="btn btn-primary btn-block" style="padding: 1rem; font-size: 1.05rem;" onclick="installApp()">Añadir a Pantalla de Inicio</button>
+            <button class="btn btn-secondary btn-block" style="border: none; background: transparent; color: var(--gray-500);" onclick="dismissInstall()">Quizá más tarde</button>
+        </div>
+    </div>
 
     <div class="modal" id="qrModal" style="z-index: 9999;">
         <div class="modal-overlay" onclick="closeModal('qrModal')"></div>
@@ -545,8 +597,6 @@
         </div>
     </div>
 
-    <div class="toast-container" id="toastContainer"></div>
-
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
@@ -557,7 +607,7 @@
         window.isDragging = false; 
         let currentUser = null, currentUserData = null, currentFolderId = null;
         let usersData = [], sessionsData = [], foldersData = [], tagsData = [];
-        let tickerData = { text: "", active: false }; // Ticker Data
+        let tickerData = { text: "", active: false };
         let deletingId = null, deletingType = null, editingUserId = null;
         
         let searchQuery = "", activeTagFilter = null; 
@@ -568,6 +618,42 @@
         let db, auth;
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
+
+        // ==================== INSTALACIÓN VIP (PWA POPUP) ====================
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            if (!localStorage.getItem('atm_pwa_dismissed')) {
+                setTimeout(() => { document.getElementById('installPopup').classList.add('show'); }, 3000);
+            }
+        });
+
+        // Detector manual de iOS (ya que Safari no soporta beforeinstallprompt igual)
+        document.addEventListener('DOMContentLoaded', () => {
+            const isIos = () => { const userAgent = window.navigator.userAgent.toLowerCase(); return /iphone|ipad|ipod/.test( userAgent ); }
+            const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
+            if (isIos() && !isInStandaloneMode() && !localStorage.getItem('atm_pwa_dismissed') && window.innerWidth <= 1024) {
+                setTimeout(() => { document.getElementById('installPopup').classList.add('show'); }, 3000);
+            }
+        });
+
+        function installApp() {
+            document.getElementById('installPopup').classList.remove('show');
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => { deferredPrompt = null; });
+            } else {
+                // Fallback mensaje para iOS
+                showToast("En iOS: Pulsa 'Compartir' abajo y luego 'Añadir a la pantalla de inicio'", "info");
+            }
+            localStorage.setItem('atm_pwa_dismissed', 'true');
+        }
+
+        function dismissInstall() {
+            document.getElementById('installPopup').classList.remove('show');
+            localStorage.setItem('atm_pwa_dismissed', 'true');
+        }
 
         // ==================== PULL TO REFRESH NATIVO ====================
         let pStartY = 0; let pCurrentY = 0; let isPulling = false;
@@ -609,15 +695,7 @@
             auth = firebase.auth(); 
         }
 
-        // ==================== SCROLL, TIEMPO, OSCURO Y PIZARRA ====================
-        window.addEventListener('scroll', () => {
-            const btn = document.getElementById('backToTopBtn');
-            if(btn) {
-                if (window.scrollY > 300) btn.classList.add('show');
-                else btn.classList.remove('show');
-            }
-        });
-
+        // ==================== SCROLL, OSCURO Y PIZARRA ====================
         function toggleDarkMode() {
             const isDark = document.body.classList.toggle('dark-mode');
             localStorage.setItem('atm_dark_mode', isDark);
@@ -632,44 +710,31 @@
             });
         }
 
-        // 🎯 MODO PIZARRA
         function toggleBlackboardMode() {
             document.body.classList.toggle('blackboard-mode');
             const isActive = document.body.classList.contains('blackboard-mode');
             document.getElementById('exitBlackboardBtn').style.display = isActive ? 'flex' : 'none';
         }
 
-        // ⛅ API DEL TIEMPO
         function initWeatherWidget() {
             if (weatherInitialized) return;
             weatherInitialized = true;
-            
             const widget = document.getElementById('weatherWidget');
             widget.innerHTML = `<span>📍 Detectando ubicación...</span>`;
-            
             if ("geolocation" in navigator) {
                 navigator.geolocation.getCurrentPosition(async (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
+                    const lat = position.coords.latitude; const lon = position.coords.longitude;
                     try {
                         const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
                         const weatherData = await weatherRes.json();
                         const temp = Math.round(weatherData.current_weather.temperature);
-                        
                         const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
                         const geoData = await geoRes.json();
                         let city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || 'Localización actual';
-                        
                         widget.innerHTML = `<span>📍 ${city} | ⛅ ${temp}°C</span>`;
-                    } catch(e) {
-                        widget.innerHTML = `<span>📍 ATM Base | ⛅ --°C</span>`;
-                    }
-                }, () => {
-                    widget.innerHTML = `<span>📍 Ubicación oculta (Activa el GPS)</span>`;
-                });
-            } else {
-                widget.innerHTML = `<span>📍 GPS no disponible</span>`;
-            }
+                    } catch(e) { widget.innerHTML = `<span>📍 ATM Base | ⛅ --°C</span>`; }
+                }, () => { widget.innerHTML = `<span>📍 Ubicación oculta (Activa el GPS)</span>`; });
+            } else { widget.innerHTML = `<span>📍 GPS no disponible</span>`; }
         }
 
         function updateHeaderGreeting() {
@@ -678,29 +743,40 @@
             if (hour >= 5 && hour < 12) greeting = '¡Buenos días';
             else if (hour >= 12 && hour < 20) greeting = '¡Buenas tardes';
             else greeting = '¡Buenas noches';
-            
             const firstName = currentUserData ? currentUserData.fullName.split(' ')[0] : 'Míster';
             document.getElementById('pageTitle').textContent = `${greeting}, ${escapeHtml(firstName)}!`;
         }
 
-        // ==================== UTILIDADES UI ====================
+        // ==================== UTILIDADES UI E ISLA DINÁMICA ====================
         function setScreen(id) {
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
             document.getElementById(id).classList.add('active');
         }
         function getInitials(n) { return n ? n.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2) : '?'; }
+        
+        let islandTimeout;
         function showToast(msg, type='info') {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${type}`; toast.textContent = msg;
-            container.appendChild(toast); setTimeout(() => toast.remove(), 4000);
+            // USANDO LA ISLA DINÁMICA
+            const island = document.getElementById('dynamicIsland');
+            const icon = island.querySelector('.di-icon');
+            const text = island.querySelector('.di-text');
+
+            island.className = `dynamic-island show ${type}`;
+            text.textContent = msg;
+
+            if(type === 'success') icon.innerHTML = '✅';
+            else if(type === 'error') icon.innerHTML = '⚠️';
+            else icon.innerHTML = 'ℹ️';
+
+            clearTimeout(islandTimeout);
+            islandTimeout = setTimeout(() => {
+                island.classList.remove('show');
+            }, 4000);
         }
+
         function openModal(id) { document.getElementById(id).classList.add('show'); }
         function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-        function closePdfModal() {
-            document.getElementById('pdfIframe').src = ''; 
-            closeModal('pdfModal');
-        }
+        function closePdfModal() { document.getElementById('pdfIframe').src = ''; closeModal('pdfModal'); }
         function toggleMobileMenu() { 
             document.getElementById('sidebar').classList.toggle('open'); 
             const overlay = document.getElementById('sidebarOverlay');
@@ -728,9 +804,7 @@
                                 document.getElementById('adminLink').style.display = currentUserData.role === 'admin' ? 'flex' : 'none';
                                 renderSidebar(); setupDataListeners(); showPage('dashboard');
                             } else {
-                                auth.signOut();
-                                showToast('Usuario no registrado en el sistema', 'error');
-                                setScreen('loginPage');
+                                auth.signOut(); showToast('Usuario no registrado', 'error'); setScreen('loginPage');
                             }
                         }, error => { console.error(error); setScreen('loginPage'); });
                     } catch (e) { console.error(e); setScreen('loginPage'); }
@@ -751,8 +825,7 @@
             try {
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
-                errDiv.style.display = 'block'; 
-                errDiv.textContent = 'Email o contraseña incorrectos.';
+                errDiv.style.display = 'block'; errDiv.textContent = 'Email o contraseña incorrectos.';
             } finally {
                 btn.disabled = false; btn.textContent = 'Iniciar Sesión';
             }
@@ -762,27 +835,21 @@
         function setupDataListeners() {
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
-                if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
+                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración') renderAdmin();
             });
             
-            // LA MAGIA DEL TICKER CAMUFLADO ESTÁ AQUÍ
             db.collection('folders').onSnapshot(s => { 
                 foldersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
-                // Extraer el Ticker de la carpeta oculta
                 const tickerDoc = foldersData.find(f => f.id === '_TICKER_SETTINGS_');
-                if (tickerDoc) {
-                    tickerData = { text: tickerDoc.text, active: tickerDoc.active };
-                } else {
-                    tickerData = { text: '', active: false };
-                }
+                if (tickerDoc) { tickerData = { text: tickerDoc.text, active: tickerDoc.active }; } 
+                else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
+                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(2)')?.classList.contains('active')) renderFoldersTab();
                 
-                // Refrescar el panel si el admin está en la pestaña de Anuncios
                 const activeTab = document.querySelector('.admin-tab.active');
                 if(document.getElementById('pageTitle').textContent === 'Administración' && activeTab && activeTab.textContent.includes('Anuncios')) {
                     renderTickerTab();
@@ -801,8 +868,7 @@
                         if(session) {
                             const btn = document.getElementById('openSharedSessionBtn');
                             btn.onclick = () => {
-                                closeModal('sharedSessionModal');
-                                viewFile(viewId);
+                                closeModal('sharedSessionModal'); viewFile(viewId);
                                 window.history.replaceState({}, document.title, window.location.pathname);
                             };
                             openModal('sharedSessionModal');
@@ -810,7 +876,7 @@
                     }
                 }
 
-                if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
+                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
             });
             
@@ -818,20 +884,17 @@
                 tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
                 if(document.getElementById('pageTitle').textContent === 'Subir Archivo') renderUpload();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderTagsTab();
-                if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
+                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
             });
         }
 
-        // ==================== UPDATE TICKER UI ====================
         function updateTickerUI() {
             const wrap = document.getElementById('mainTicker');
             const txt = document.getElementById('tickerText');
             if (tickerData.active && tickerData.text && tickerData.text.trim() !== "") {
                 txt.innerHTML = `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${escapeHtml(tickerData.text)}`;
                 wrap.classList.add('active');
-            } else {
-                wrap.classList.remove('active');
-            }
+            } else { wrap.classList.remove('active'); }
         }
 
         function isFolderAllowed(folderId) {
@@ -847,16 +910,11 @@
 
         // ==================== DRAG AND DROP ====================
         function dragStart(e, id) { 
-            window.isDragging = true;
-            draggedFolderId = id; 
-            e.dataTransfer.effectAllowed = 'move'; 
-            e.dataTransfer.setData('text/plain', id); 
+            window.isDragging = true; draggedFolderId = id; 
+            e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); 
             setTimeout(() => e.target.style.opacity = '0.5', 0);
         }
-        function dragEnd(e) {
-            e.target.style.opacity = '1';
-            setTimeout(() => { window.isDragging = false; }, 100);
-        }
+        function dragEnd(e) { e.target.style.opacity = '1'; setTimeout(() => { window.isDragging = false; }, 100); }
         function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
         function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
         
@@ -877,17 +935,13 @@
 
             const batch = db.batch();
             visible.forEach((f, idx) => { batch.update(db.collection('folders').doc(f.id), { order: idx }); });
-            try { 
-                await batch.commit(); 
-                showToast('Carpetas ordenadas', 'success'); 
-            } catch(err) { showToast('Error al ordenar', 'error'); }
+            try { await batch.commit(); showToast('Carpetas ordenadas', 'success'); } catch(err) { showToast('Error al ordenar', 'error'); }
         }
 
         // ==================== COMPARTIR WHATSAPP Y QR NATIVO ====================
         async function shareWhatsApp(id) {
             const s = sessionsData.find(x => x.id === id);
             if (!s) return;
-
             const ext = s.fileExt || 'pdf';
             const filename = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
             
@@ -895,32 +949,19 @@
                 try {
                     const mimeType = s.fileType || 'application/pdf';
                     const byteString = atob(s.pdfData.split(',')[1]);
-                    const ab = new ArrayBuffer(byteString.length);
-                    const ia = new Uint8Array(ab);
-                    for (let i = 0; i < byteString.length; i++) {
-                        ia[i] = byteString.charCodeAt(i);
-                    }
+                    const ab = new ArrayBuffer(byteString.length); const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
                     const blob = new Blob([ab], { type: mimeType });
                     const file = new File([blob], filename, { type: mimeType });
 
                     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({
-                            files: [file],
-                            title: s.title,
-                            text: '⚽ Sesión ATM Keepers 360: ' + s.title
-                        });
+                        await navigator.share({ files: [file], title: s.title, text: '⚽ Sesión ATM Keepers 360: ' + s.title });
                         showToast('Archivo preparado para enviar', 'success');
-                    } else {
-                        showToast('Para compartir directo por WhatsApp usa un móvil o tablet. En PC, usa "Descargar".', 'error');
-                    }
+                    } else { showToast('Para compartir directo usa un móvil o tablet. En PC, usa "Descargar".', 'error'); }
                 } catch(e) {
-                    if (e.name !== 'AbortError') {
-                        showToast('Error al compartir. Usa la opción de Descargar.', 'error');
-                    }
+                    if (e.name !== 'AbortError') showToast('Error al compartir. Usa la opción de Descargar.', 'error');
                 }
-            } else {
-                showToast('Error leyendo archivo.', 'error');
-            }
+            } else { showToast('Error leyendo archivo.', 'error'); }
         }
 
         function openQRModal(id) {
@@ -938,7 +979,6 @@
             const s = sessionsData.find(x => x.id === id); 
             if (s && s.pdfData) {
                 const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
-                
                 let mimeType = s.fileType || 'application/pdf';
                 if (!s.fileType) {
                     if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
@@ -953,22 +993,17 @@
                 if (ext === 'pdf' && !isMobileOrTablet) {
                     document.getElementById('pdfIframe').src = url;
                     openModal('pdfModal');
-                } else {
-                    window.location.href = url;
-                }
+                } else { window.location.href = url; }
             }
         }
 
         function downloadFile(id) {
             const s = sessionsData.find(x => x.id === id);
             if (s && s.pdfData) {
-                const link = document.createElement('a'); 
-                link.href = s.pdfData; 
+                const link = document.createElement('a'); link.href = s.pdfData; 
                 const ext = s.fileExt || 'pdf';
                 link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
-                document.body.appendChild(link); 
-                link.click(); 
-                document.body.removeChild(link);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
             }
         }
         
@@ -979,8 +1014,7 @@
                 else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
                 else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
                 else if (deletingType === 'tag') await db.collection('tags').doc(deletingId).delete();
-                closeModal('deleteModal'); 
-                showToast('Eliminado correctamente', 'success');
+                closeModal('deleteModal'); showToast('Eliminado correctamente', 'success');
             } catch(e) { showToast('Error al eliminar', 'error'); }
         };
 
@@ -988,56 +1022,35 @@
         function toggleFavorite(id, event) {
             if (event) event.stopPropagation();
             if (myFavorites.includes(id)) {
-                myFavorites = myFavorites.filter(f => f !== id);
-                showToast('Eliminado de Favoritos', 'info');
+                myFavorites = myFavorites.filter(f => f !== id); showToast('Eliminado de Favoritos', 'info');
             } else {
-                myFavorites.push(id);
-                showToast('Añadido a Favoritos ⭐', 'success');
+                myFavorites.push(id); showToast('Añadido a Favoritos ⭐', 'success');
             }
             localStorage.setItem('atm_favorites', JSON.stringify(myFavorites));
             renderDashboard();
         }
 
-        function handleSearch() {
-            searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            renderDashboard();
-        }
-        
+        function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderDashboard(); }
         function toggleTagFilter(tagName, event) {
             if(event) event.stopPropagation(); 
-            if(activeTagFilter === tagName) activeTagFilter = null; 
-            else activeTagFilter = tagName; 
+            if(activeTagFilter === tagName) activeTagFilter = null; else activeTagFilter = tagName; 
             renderDashboard();
         }
-
         function clearFilters() {
-            activeTagFilter = null;
-            searchQuery = "";
-            document.getElementById('searchInput').value = "";
+            activeTagFilter = null; searchQuery = ""; document.getElementById('searchInput').value = "";
             renderDashboard();
         }
-
-        function setViewMode(mode) {
-            currentViewMode = mode;
-            localStorage.setItem('atm_view_mode', mode);
-            showPage('dashboard'); 
-        }
+        function setViewMode(mode) { currentViewMode = mode; localStorage.setItem('atm_view_mode', mode); showPage('dashboard'); }
 
         function showPage(p) {
-            currentFolderId = null;
-            activeTagFilter = null;
-            searchQuery = ""; 
-            document.getElementById('searchInput').value = "";
-            
+            currentFolderId = null; activeTagFilter = null; searchQuery = ""; document.getElementById('searchInput').value = "";
             document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === p));
             const dynActions = document.getElementById('dynamicHeaderButtons'); dynActions.innerHTML = '';
-            
             document.getElementById('searchContainer').style.display = (p === 'dashboard') ? 'flex' : 'none';
             document.getElementById('weatherWidget').style.display = (p === 'dashboard') ? 'flex' : 'none';
 
             if (p === 'dashboard') {
-                updateHeaderGreeting(); 
-                initWeatherWidget();    
+                updateHeaderGreeting(); initWeatherWidget();    
                 document.getElementById('pageSubtitle').textContent = 'Explora y gestiona las carpetas del equipo';
                 
                 dynActions.innerHTML = `
@@ -1048,13 +1061,7 @@
                         <button class="view-toggle-btn ${currentViewMode === 'list' ? 'active' : ''}" onclick="setViewMode('list')" title="Vista Lista">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                         </button>
-                    </div>
-                    <button class="view-toggle-btn" style="background:var(--atm-red); color:white;" onclick="toggleBlackboardMode()" title="Modo Pizarra">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-                    </button>
-                    <button class="btn btn-secondary" onclick="openFolderModal()">📁 Carpeta</button> 
-                    <button class="btn btn-primary" onclick="showPage('upload')">📄 Archivo</button>`;
-                
+                    </div>`;
                 renderDashboard();
             } else if (p === 'upload') {
                 document.getElementById('pageTitle').textContent = 'Subir Archivo';
@@ -1072,21 +1079,15 @@
         function renderSidebar() {
             if (!currentUserData) return;
             const avatar = document.getElementById('userAvatar');
-            if (currentUserData.profileImage) {
-                avatar.innerHTML = `<img src="${currentUserData.profileImage}">`;
-            } else {
-                avatar.innerHTML = getInitials(currentUserData.fullName);
-            }
+            if (currentUserData.profileImage) { avatar.innerHTML = `<img src="${currentUserData.profileImage}">`; } 
+            else { avatar.innerHTML = getInitials(currentUserData.fullName); }
             document.getElementById('userName').textContent = currentUserData.fullName;
             document.getElementById('userRoleDisplay').textContent = currentUserData.role === 'admin' ? 'Administrador' : 'Entrenador';
         }
 
         function navigateToFolder(id) { 
             if (window.isDragging) return;
-            currentFolderId = id; 
-            searchQuery = "";
-            activeTagFilter = null;
-            document.getElementById('searchInput').value = "";
+            currentFolderId = id; searchQuery = ""; activeTagFilter = null; document.getElementById('searchInput').value = "";
             renderDashboard(); 
         }
 
@@ -1170,16 +1171,13 @@
             let visibleSessions = [];
 
             if (searchQuery.length > 0 || activeTagFilter !== null) {
-                
                 let titleMsg = `Resultados ${activeTagFilter ? 'de la etiqueta: <span class="tag-pill" style="background:var(--atm-red); margin-left:0.5rem;">'+escapeHtml(activeTagFilter)+'</span>' : ''} ${searchQuery ? 'para "'+escapeHtml(searchQuery)+'"' : ''}`;
-                
                 html += `
                 <div style="margin-bottom:1.5rem; display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
                     <h3 style="color:var(--atm-blue); margin:0;">${titleMsg}</h3>
                     <button class="btn btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.8rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="clearFilters()">Limpiar Filtros ✕</button>
                 </div>`;
                 
-                // Excluimos la carpeta de settings camuflada
                 visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_' && (!searchQuery || f.name.toLowerCase().includes(searchQuery)));
                 visibleSessions = sessionsData.filter(s => {
                     if (!isFolderAllowed(s.folderId)) return false;
@@ -1187,7 +1185,6 @@
                     const matchTag = !activeTagFilter || (s.tags && s.tags.includes(activeTagFilter));
                     return matchSearch && matchTag;
                 });
-
             } else {
                 html += `<div class="breadcrumbs"><span class="breadcrumb-item" onclick="navigateToFolder(null)">🏠 Inicio</span>`;
                 if (currentFolderId) {
@@ -1265,7 +1262,6 @@
             document.getElementById('folderForm').reset();
             document.getElementById('folderParentId').value = currentFolderId || '';
             const g = document.getElementById('folderUserGroup');
-            
             if (!currentFolderId && currentUserData.role === 'admin') {
                 g.style.display = 'block';
                 document.getElementById('folderUser').innerHTML = `<option value="">Sin asignar</option>` + usersData.filter(u=>u.role==='coach').map(u => `<option value="${u.id}">${escapeHtml(u.fullName)}</option>`).join('');
@@ -1356,13 +1352,11 @@
                 e.preventDefault();
                 const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
                 
-                // LÍMITE DE 1MB RECUPERADO (Porque no hay Firebase Storage)
                 if (file.size > 1048576) {
                     return showToast("El archivo supera 1MB (Límite estricto de base de datos)", "error");
                 }
 
                 btn.disabled = true; btn.textContent = "Subiendo...";
-                
                 const checkedTags = Array.from(document.querySelectorAll('.tag-check:checked')).map(cb => cb.value);
 
                 const reader = new FileReader();
@@ -1376,7 +1370,7 @@
                         tags: checkedTags,
                         fileType: file.type, 
                         fileExt: file.name.split('.').pop().toLowerCase(),
-                        pdfData: reader.result, // Guardamos como texto directamente
+                        pdfData: reader.result, 
                         uploadDate: new Date().toISOString(), 
                         uploadedBy: currentUser.uid
                     }).then(() => { 
@@ -1433,7 +1427,6 @@
             else if (tab === 'ticker') renderTickerTab();
         }
 
-        // 📢 PESTAÑA DE TICKER EN ADMIN (GUARDADO CAMUFLADO)
         function renderTickerTab() {
             const content = document.getElementById('adminContent');
             content.innerHTML = `
@@ -1460,13 +1453,12 @@
                 const isActive = document.getElementById('tickerToggle').classList.contains('active');
                 
                 try {
-                    // Guardamos el ticker camuflado dentro de la colección "folders" a la que sí hay permisos
                     await db.collection('folders').doc('_TICKER_SETTINGS_').set({ 
                         name: 'SYSTEM_TICKER',
                         parentId: 'SYSTEM_HIDDEN',
                         text: text, 
                         active: isActive,
-                        userId: currentUser.uid // Para no tener problema con los permisos de lectura
+                        userId: currentUser.uid 
                     }, { merge: true });
                     showToast('Ticker publicado correctamente', 'success');
                 } catch(error) {
@@ -1723,7 +1715,7 @@
                     await db.collection('users').doc(cred.user.uid).set(data);
                     await secAuth.signOut();
                     secondaryApp.delete();
-                    showToast('Usuario creado correctamente', 'success');
+                    showToast('Usuario creado', 'success');
                 }
                 closeModal('userModal');
             } catch(err) {
@@ -1743,7 +1735,6 @@
             showToast('Entrenador actualizado', 'success'); closeModal('changeTrainerModal');
         };
 
-        // INICIALIZACIÓN SEGURA
         document.addEventListener('DOMContentLoaded', () => {
             try { initFirebase(); setupAuthListener(); } 
             catch (e) { console.error(e); alert("Error al iniciar: " + e.message); }
