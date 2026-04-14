@@ -111,13 +111,13 @@
         
         .main-content { flex: 1; margin-left: 280px; min-height: 100vh; display: flex; flex-direction: column; transition: margin-left 0.4s ease, background 0.3s; }
         
-        /* 🎯 MODO PIZARRA (BLACKBOARD MODE) */
+        /* 🎯 MODO PIZARRA (BLACKBOARD MODE) CSS */
         body.blackboard-mode .sidebar { transform: translateX(-100%); }
         body.blackboard-mode .main-content { margin-left: 0; }
         body.blackboard-mode .main-header { transform: translateY(-100%); position: absolute; visibility: hidden; }
-        body.blackboard-mode .content-area { padding-top: 5rem; } 
+        body.blackboard-mode .content-area { padding-top: 5rem; }
 
-        /* ✨ GLASSMORPHISM HEADER */
+        /* Header normal */
         .main-header { 
             background: rgba(255, 255, 255, 0.85); 
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -163,7 +163,7 @@
         .folder-card[draggable="true"]:active { cursor: grabbing; }
         .folder-card.drag-over { border-left: 4px dashed var(--atm-red); opacity: 0.8; }
 
-        /* 🔥 INSIGNIA NUEVO */
+        /* 🔥 INSIGNIAS NUEVO */
         .badge-new { position: absolute; top: 12px; right: 12px; background: #ef4444; color: white; font-size: 0.65rem; font-weight: bold; padding: 0.3rem 0.6rem; border-radius: 9999px; box-shadow: 0 4px 6px rgba(239, 68, 68, 0.4); animation: pulseBadge 2s infinite; pointer-events: none; z-index: 10; border: 2px solid var(--white); }
         @keyframes pulseBadge { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { transform: scale(1.05); box-shadow: 0 0 0 6px rgba(239, 68, 68, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
 
@@ -378,7 +378,7 @@
             </div>
             <div style="padding: 2rem;">
                 <img id="qrImage" src="" alt="Código QR de la sesión" style="width:100%; max-width:250px; margin:0 auto; border-radius:12px; box-shadow:var(--shadow);">
-                <p style="margin-top:1.5rem; color:var(--gray-600); font-size:0.95rem;">Escanea este código para abrir el PDF en tu móvil de forma instantánea.</p>
+                <p style="margin-top:1.5rem; color:var(--gray-600); font-size:0.95rem;">Escanea este código para abrir el archivo en tu móvil de forma instantánea.</p>
             </div>
         </div>
     </div>
@@ -502,7 +502,6 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="firebase-config.js"></script>
     
     <script>
@@ -515,13 +514,15 @@
         let searchQuery = "", activeTagFilter = null; 
         let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
         let myFavorites = JSON.parse(localStorage.getItem('atm_favorites')) || []; 
+        let hasCheckedSharedLink = false; // Evita bucle al abrir enlace
         
-        let db, auth, storage;
+        let db, auth;
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
 
         function initFirebase() { 
-            db = firebase.firestore(); auth = firebase.auth(); storage = firebase.storage();
+            db = firebase.firestore(); 
+            auth = firebase.auth(); 
         }
 
         // ==================== SCROLL, TIEMPO, OSCURO Y PIZARRA ====================
@@ -687,6 +688,17 @@
             });
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
+                
+                // CÓDIGO NUEVO PARA COMPARTIR ENLACES
+                if (!hasCheckedSharedLink) {
+                    hasCheckedSharedLink = true;
+                    const params = new URLSearchParams(window.location.search);
+                    const viewId = params.get('view');
+                    if (viewId) {
+                        setTimeout(() => viewFile(viewId), 500); // Abre el archivo mágicamente si hay enlace
+                    }
+                }
+
                 if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
             });
@@ -747,78 +759,64 @@
             } catch(err) { showToast('Error al ordenar', 'error'); }
         }
 
-        // ==================== COMPARTIR WHATSAPP Y QR ====================
+        // ==================== COMPARTIR WHATSAPP Y QR (VERSION SIN STORAGE) ====================
         function shareWhatsApp(id) {
             const s = sessionsData.find(x => x.id === id);
-            if (s && s.fileUrl) {
-                const text = encodeURIComponent(`⚽ Mira esta sesión de ATM Keepers 360:\n*${s.title}*\n\n${s.fileUrl}`);
+            if (s) {
+                // Generamos enlace directo a nuestra App, forzando a que la abran de forma segura
+                const link = window.location.href.split('?')[0] + "?view=" + id;
+                const text = encodeURIComponent(`⚽ Mira esta sesión de ATM Keepers 360:\n*${s.title}*\n\n${link}`);
                 window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
-            } else {
-                showToast('Archivo sin enlace público. Sube el archivo de nuevo para poder compartirlo.', 'error');
             }
         }
 
         function openQRModal(id) {
             const s = sessionsData.find(x => x.id === id);
-            if (s && s.fileUrl) {
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(s.fileUrl)}&margin=10`;
+            if (s) {
+                const link = window.location.href.split('?')[0] + "?view=" + id;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}&margin=10`;
                 document.getElementById('qrImage').src = qrUrl;
                 openModal('qrModal');
-            } else {
-                showToast('Archivo sin enlace público. Sube el archivo de nuevo para generar QR.', 'error');
             }
         }
 
         // ==================== VISUALIZAR Y DESCARGAR ARCHIVOS ====================
         function viewFile(id) { 
             const s = sessionsData.find(x => x.id === id); 
-            if (s) {
+            if (s && s.pdfData) {
                 const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
                 
-                let url = s.fileUrl;
-                if (!url && s.pdfData) {
-                    let mimeType = s.fileType || 'application/pdf';
-                    if (!s.fileType) {
-                        if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
-                        if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-                    }
-                    const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
-                    url = URL.createObjectURL(blob);
+                let mimeType = s.fileType || 'application/pdf';
+                if (!s.fileType) {
+                    if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
+                    if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
                 }
+                const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
+                const url = URL.createObjectURL(blob);
 
-                if (url) {
-                    const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-                    const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024 || isTouch;
+                // 🛡️ DETECTOR INFALIBLE PARA TABLETS Y MÓVILES
+                const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024 || isTouch;
 
-                    if (ext === 'pdf' && !isMobileOrTablet) {
-                        document.getElementById('pdfIframe').src = url;
-                        openModal('pdfModal');
-                    } else {
-                        window.open(url, '_blank');
-                    }
+                if (ext === 'pdf' && !isMobileOrTablet) {
+                    document.getElementById('pdfIframe').src = url;
+                    openModal('pdfModal');
+                } else {
+                    window.open(url, '_blank');
                 }
             }
         }
 
         function downloadFile(id) {
             const s = sessionsData.find(x => x.id === id);
-            if (s) {
-                if (s.fileUrl) {
-                    fetch(s.fileUrl)
-                        .then(response => response.blob())
-                        .then(blob => {
-                            const url = window.URL.createObjectURL(blob);
-                            const link = document.createElement('a'); link.href = url;
-                            link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + (s.fileExt || 'pdf'));
-                            document.body.appendChild(link); link.click(); document.body.removeChild(link);
-                            window.URL.revokeObjectURL(url);
-                        }).catch(err => { window.open(s.fileUrl, '_blank'); });
-                } else if (s.pdfData) {
-                    const link = document.createElement('a'); link.href = s.pdfData; 
-                    const ext = s.fileExt || 'pdf';
-                    link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
-                    document.body.appendChild(link); link.click(); document.body.removeChild(link);
-                }
+            if (s && s.pdfData) {
+                const link = document.createElement('a'); 
+                link.href = s.pdfData; 
+                const ext = s.fileExt || 'pdf';
+                link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
+                document.body.appendChild(link); 
+                link.click(); 
+                document.body.removeChild(link);
             }
         }
         
@@ -957,7 +955,7 @@
             if (isViewable) buttonsHtml += `<button class="btn btn-secondary" style="flex:1; padding:0.5rem;" onclick="viewFile('${s.id}')">Ver</button>`;
             buttonsHtml += `<button class="btn btn-primary" style="flex:1; padding:0.5rem;" onclick="downloadFile('${s.id}')">Descargar</button>`;
 
-            // 📲 Botones Sociales (WhatsApp y QR)
+            // 📲 Botones Sociales (WhatsApp y QR para TODOS los archivos)
             let shareBtns = `
                 <button class="btn btn-secondary" style="padding:0.5rem;" onclick="shareWhatsApp('${s.id}')" title="Compartir WhatsApp">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
@@ -980,7 +978,7 @@
             const isNew = (new Date() - new Date(s.uploadDate)) < 172800000; 
             const newBadgeHtml = isNew ? `<div class="badge-new">¡NUEVO!</div>` : '';
 
-            // ⭐ FAVORITO (SVG HUECO O RELLENO)
+            // ⭐ FAVORITO (SVG HUECO O RELLENO CON MARGEN PROTECTOR)
             const isFav = myFavorites.includes(s.id);
             const starSvg = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="${isFav ? 'currentColor' : 'none'}" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
             const starHtml = `<button type="button" class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${s.id}', event)" title="Favorito">${starSvg}</button>`;
@@ -1181,7 +1179,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Archivo (Cualquier formato)</label>
+                            <label>Archivo (máx 1MB - Límite de Base de Datos)</label>
                             <div class="dropzone">
                                 <input type="file" id="upFile" required onchange="handleFileSelect(event)">
                                 <div id="dropzoneContent">
@@ -1209,42 +1207,38 @@
             document.getElementById('upForm').onsubmit = e => {
                 e.preventDefault();
                 const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
-                btn.disabled = true; btn.textContent = "Subiendo (0%)...";
+                
+                // LÍMITE DE 1MB RECUPERADO (Porque no hay Firebase Storage)
+                if (file.size > 1048576) {
+                    return showToast("El archivo supera 1MB (Límite estricto de base de datos)", "error");
+                }
+
+                btn.disabled = true; btn.textContent = "Subiendo...";
                 
                 const checkedTags = Array.from(document.querySelectorAll('.tag-check:checked')).map(cb => cb.value);
 
-                const storageRef = storage.ref();
-                const fileRef = storageRef.child('sesiones/' + Date.now() + '_' + file.name);
-                const uploadTask = fileRef.put(file);
-
-                uploadTask.on('state_changed', 
-                    (snapshot) => {
-                        const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-                        btn.textContent = "Subiendo (" + progress + "%)...";
-                    }, 
-                    (error) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                
+                reader.onload = () => {
+                    db.collection('sessions').add({
+                        title: document.getElementById('upTitle').value, 
+                        folderId: document.getElementById('upFolder').value,
+                        originalName: file.name,
+                        tags: checkedTags,
+                        fileType: file.type, 
+                        fileExt: file.name.split('.').pop().toLowerCase(),
+                        pdfData: reader.result, // Guardamos como texto directamente
+                        uploadDate: new Date().toISOString(), 
+                        uploadedBy: currentUser.uid
+                    }).then(() => { 
+                        showToast('Archivo guardado', 'success'); 
+                        showPage('dashboard'); 
+                    }).catch(error => {
                         showToast("Error al subir: " + error.message, "error");
                         btn.disabled = false; btn.textContent = "Subir Archivo";
-                    }, 
-                    () => {
-                        uploadTask.snapshot.ref.getDownloadURL().then((downloadURL) => {
-                            db.collection('sessions').add({
-                                title: document.getElementById('upTitle').value, 
-                                folderId: document.getElementById('upFolder').value,
-                                originalName: file.name,
-                                tags: checkedTags,
-                                fileType: file.type, 
-                                fileExt: file.name.split('.').pop().toLowerCase(),
-                                fileUrl: downloadURL,
-                                uploadDate: new Date().toISOString(), 
-                                uploadedBy: currentUser.uid
-                            }).then(() => { 
-                                showToast('Archivo guardado', 'success'); 
-                                showPage('dashboard'); 
-                            });
-                        });
-                    }
-                );
+                    });
+                };
             };
         }
 
