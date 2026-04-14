@@ -364,15 +364,15 @@
                 <h2>ATM Keepers 360</h2>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+                <a href="javascript:void(0)" class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect></svg>
                     <span>Sesiones</span>
                 </a>
-                <a href="#" class="nav-item" data-page="upload" onclick="showPage('upload')">
+                <a href="javascript:void(0)" class="nav-item" data-page="upload" onclick="showPage('upload')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17,8 12,3 7,8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                     <span>Subir Archivo</span>
                 </a>
-                <a href="#" class="nav-item" data-page="admin" id="adminLink" style="display:none;" onclick="showPage('admin')">
+                <a href="javascript:void(0)" class="nav-item" data-page="admin" id="adminLink" style="display:none;" onclick="showPage('admin')">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33"></path></svg>
                     <span>Administración</span>
                 </a>
@@ -609,6 +609,7 @@
         let usersData = [], sessionsData = [], foldersData = [], tagsData = [];
         let tickerData = { text: "", active: false };
         let deletingId = null, deletingType = null, editingUserId = null;
+        let currentPage = 'dashboard'; // CONTROL DE PANTALLA FIJO
         
         let searchQuery = "", activeTagFilter = null; 
         let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
@@ -619,17 +620,45 @@
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
 
+        // ==================== CONTROL DE CARGA (SKELETON) ====================
+        let isAppReady = false;
+        let initialDataCount = 0;
+        
+        function checkAppReady() {
+            if (!isAppReady && initialDataCount >= 4) { // Esperamos a las 4 colecciones de datos
+                isAppReady = true;
+                setScreen('appPage'); // Quita el Skeleton y muestra la App lista de golpe
+                showPage('dashboard');
+                
+                // Abre el QR si hay enlace, justo cuando la app está 100% lista
+                if (!hasCheckedSharedLink) {
+                    hasCheckedSharedLink = true;
+                    const params = new URLSearchParams(window.location.search);
+                    const viewId = params.get('view');
+                    if (viewId) {
+                        const session = sessionsData.find(x => x.id === viewId);
+                        if(session) {
+                            const btn = document.getElementById('openSharedSessionBtn');
+                            btn.onclick = () => {
+                                closeModal('sharedSessionModal'); viewFile(viewId);
+                                window.history.replaceState({}, document.title, window.location.pathname);
+                            };
+                            openModal('sharedSessionModal');
+                        }
+                    }
+                }
+            }
+        }
+
         // ==================== INSTALACIÓN VIP (PWA POPUP) ====================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
+            e.preventDefault(); deferredPrompt = e;
             if (!localStorage.getItem('atm_pwa_dismissed')) {
                 setTimeout(() => { document.getElementById('installPopup').classList.add('show'); }, 3000);
             }
         });
 
-        // Detector manual de iOS (ya que Safari no soporta beforeinstallprompt igual)
         document.addEventListener('DOMContentLoaded', () => {
             const isIos = () => { const userAgent = window.navigator.userAgent.toLowerCase(); return /iphone|ipad|ipod/.test( userAgent ); }
             const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
@@ -644,7 +673,6 @@
                 deferredPrompt.prompt();
                 deferredPrompt.userChoice.then((choiceResult) => { deferredPrompt = null; });
             } else {
-                // Fallback mensaje para iOS
                 showToast("En iOS: Pulsa 'Compartir' abajo y luego 'Añadir a la pantalla de inicio'", "info");
             }
             localStorage.setItem('atm_pwa_dismissed', 'true');
@@ -683,17 +711,12 @@
                 if (distance > 70) {
                     ptrSpinner.style.animation = 'spinLogo 1s linear infinite';
                     setTimeout(() => location.reload(), 600);
-                } else {
-                    ptrContainer.style.transform = `translateY(0px)`;
-                }
+                } else { ptrContainer.style.transform = `translateY(0px)`; }
                 pStartY = 0; pCurrentY = 0;
             });
         });
 
-        function initFirebase() { 
-            db = firebase.firestore(); 
-            auth = firebase.auth(); 
-        }
+        function initFirebase() { db = firebase.firestore(); auth = firebase.auth(); }
 
         // ==================== SCROLL, OSCURO Y PIZARRA ====================
         function toggleDarkMode() {
@@ -756,7 +779,6 @@
         
         let islandTimeout;
         function showToast(msg, type='info') {
-            // USANDO LA ISLA DINÁMICA
             const island = document.getElementById('dynamicIsland');
             const icon = island.querySelector('.di-icon');
             const text = island.querySelector('.di-text');
@@ -769,9 +791,7 @@
             else icon.innerHTML = 'ℹ️';
 
             clearTimeout(islandTimeout);
-            islandTimeout = setTimeout(() => {
-                island.classList.remove('show');
-            }, 4000);
+            islandTimeout = setTimeout(() => { island.classList.remove('show'); }, 4000);
         }
 
         function openModal(id) { document.getElementById(id).classList.add('show'); }
@@ -800,9 +820,14 @@
                             if (doc.exists) {
                                 currentUserData = { id: doc.id, ...doc.data() };
                                 if (!currentUserData.active) { auth.signOut(); showToast('Cuenta inactiva', 'error'); setScreen('loginPage'); return; }
-                                setScreen('appPage');
+                                
                                 document.getElementById('adminLink').style.display = currentUserData.role === 'admin' ? 'flex' : 'none';
-                                renderSidebar(); setupDataListeners(); showPage('dashboard');
+                                renderSidebar(); 
+                                
+                                if (!window.listenersSetup) {
+                                    window.listenersSetup = true;
+                                    setupDataListeners();
+                                }
                             } else {
                                 auth.signOut(); showToast('Usuario no registrado', 'error'); setScreen('loginPage');
                             }
@@ -835,8 +860,11 @@
         function setupDataListeners() {
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
-                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
-                if(document.getElementById('pageTitle').textContent === 'Administración') renderAdmin();
+                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                else {
+                    if(currentPage === 'dashboard') renderDashboard();
+                    else if(currentPage === 'admin') renderAdmin();
+                }
             });
             
             db.collection('folders').onSnapshot(s => { 
@@ -847,44 +875,36 @@
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
-                if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(2)')?.classList.contains('active')) renderFoldersTab();
-                
-                const activeTab = document.querySelector('.admin-tab.active');
-                if(document.getElementById('pageTitle').textContent === 'Administración' && activeTab && activeTab.textContent.includes('Anuncios')) {
-                    renderTickerTab();
+                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                else {
+                    if(currentPage === 'dashboard') renderDashboard();
+                    else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(2)')?.classList.contains('active')) renderFoldersTab();
+                    
+                    const activeTab = document.querySelector('.admin-tab.active');
+                    if(currentPage === 'admin' && activeTab && activeTab.textContent.includes('Anuncios')) {
+                        renderTickerTab();
+                    }
                 }
             });
 
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
-                if (!hasCheckedSharedLink) {
-                    hasCheckedSharedLink = true;
-                    const params = new URLSearchParams(window.location.search);
-                    const viewId = params.get('view');
-                    if (viewId) {
-                        const session = sessionsData.find(x => x.id === viewId);
-                        if(session) {
-                            const btn = document.getElementById('openSharedSessionBtn');
-                            btn.onclick = () => {
-                                closeModal('sharedSessionModal'); viewFile(viewId);
-                                window.history.replaceState({}, document.title, window.location.pathname);
-                            };
-                            openModal('sharedSessionModal');
-                        }
-                    }
+                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                else {
+                    if(currentPage === 'dashboard') renderDashboard();
+                    else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
                 }
-
-                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
-                if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
             });
             
             db.collection('tags').onSnapshot(s => {
                 tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
-                if(document.getElementById('pageTitle').textContent === 'Subir Archivo') renderUpload();
-                if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderTagsTab();
-                if(document.getElementById('pageTitle').textContent.includes('Hola')) renderDashboard();
+                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                else {
+                    if(currentPage === 'upload') renderUpload();
+                    else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderTagsTab();
+                    else if(currentPage === 'dashboard') renderDashboard();
+                }
             });
         }
 
@@ -1043,11 +1063,15 @@
         function setViewMode(mode) { currentViewMode = mode; localStorage.setItem('atm_view_mode', mode); showPage('dashboard'); }
 
         function showPage(p) {
-            currentFolderId = null; activeTagFilter = null; searchQuery = ""; document.getElementById('searchInput').value = "";
+            currentPage = p; // Mantiene el control de dónde estamos exactamente
+            currentFolderId = null; activeTagFilter = null; searchQuery = ""; 
+            if(document.getElementById('searchInput')) document.getElementById('searchInput').value = "";
+            
             document.querySelectorAll('.nav-item').forEach(i => i.classList.toggle('active', i.dataset.page === p));
             const dynActions = document.getElementById('dynamicHeaderButtons'); dynActions.innerHTML = '';
             document.getElementById('searchContainer').style.display = (p === 'dashboard') ? 'flex' : 'none';
             document.getElementById('weatherWidget').style.display = (p === 'dashboard') ? 'flex' : 'none';
+            document.getElementById('fabContainer').style.display = (p === 'dashboard') ? 'flex' : 'none';
 
             if (p === 'dashboard') {
                 updateHeaderGreeting(); initWeatherWidget();    
@@ -1164,6 +1188,7 @@
         }
 
         function renderDashboard() {
+            if (currentPage !== 'dashboard') return;
             const container = document.getElementById('contentArea');
             let html = ``;
             
@@ -1436,7 +1461,7 @@
                 <form id="tickerForm">
                     <div class="form-group">
                         <label>Mensaje del Ticker</label>
-                        <input type="text" id="tickerInput" value="${escapeHtml(tickerData.text || '')}" placeholder="Ej: ⚠️ Recordatorio: Subir las sesiones a Keepers 360 antes del viernes" required>
+                        <input type="text" id="tickerInput" value="${escapeHtml(tickerData.text || '')}" placeholder="Ej: ⚠️ Recordatorio: Subir las sesiones antes del viernes" required>
                     </div>
                     <div class="form-group" style="display:flex; align-items:center; gap:1rem;">
                         <label style="margin:0;">Mostrar Ticker en la App</label>
@@ -1454,16 +1479,10 @@
                 
                 try {
                     await db.collection('folders').doc('_TICKER_SETTINGS_').set({ 
-                        name: 'SYSTEM_TICKER',
-                        parentId: 'SYSTEM_HIDDEN',
-                        text: text, 
-                        active: isActive,
-                        userId: currentUser.uid 
+                        name: 'SYSTEM_TICKER', parentId: 'SYSTEM_HIDDEN', text: text, active: isActive, userId: currentUser.uid 
                     }, { merge: true });
                     showToast('Ticker publicado correctamente', 'success');
-                } catch(error) {
-                    showToast('Error al publicar: ' + error.message, 'error');
-                }
+                } catch(error) { showToast('Error al publicar: ' + error.message, 'error'); }
             };
         }
 
@@ -1563,7 +1582,6 @@
 
         function renderStatsTab() {
             const content = document.getElementById('adminContent');
-            
             if(coachChartInstance) coachChartInstance.destroy();
             if(tagsChartInstance) tagsChartInstance.destroy();
 
@@ -1707,20 +1725,14 @@
                     const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
                     const secAuth = firebase.auth(secondaryApp);
                     const cred = await secAuth.createUserWithEmailAndPassword(email, pass);
-                    
-                    data.email = email;
-                    data.active = true;
-                    data.createdAt = new Date().toISOString();
-                    
+                    data.email = email; data.active = true; data.createdAt = new Date().toISOString();
                     await db.collection('users').doc(cred.user.uid).set(data);
-                    await secAuth.signOut();
-                    secondaryApp.delete();
+                    await secAuth.signOut(); secondaryApp.delete();
                     showToast('Usuario creado', 'success');
                 }
                 closeModal('userModal');
-            } catch(err) {
-                showToast('Error: ' + err.message, 'error');
-            } finally { btn.disabled = false; }
+            } catch(err) { showToast('Error: ' + err.message, 'error'); } 
+            finally { btn.disabled = false; }
         };
 
         function showChangeTrainerModal(id) {
