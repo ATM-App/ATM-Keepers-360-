@@ -50,22 +50,20 @@
         .screen { display: none; width: 100%; min-height: 100vh; }
         .screen.active { display: flex; }
 
-        /* Loading */
-        .loading-container { align-items: center; justify-content: center; flex-direction: column; gap: 1rem; background: var(--gray-100); }
-        .spinner { width: 48px; height: 48px; border: 4px solid var(--gray-200); border-top-color: var(--atm-red); border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        /* 🦴 SKELETON LOADING (PREMIUM) */
+        .loading-container { align-items: flex-start; justify-content: flex-start; background: var(--gray-100); flex-direction: row; padding: 0; overflow: hidden;}
+        .skeleton { background: var(--gray-200); border-radius: var(--radius); animation: pulseSkel 1.5s infinite ease-in-out; }
+        body.dark-mode .skeleton { background: var(--gray-700); }
+        @keyframes pulseSkel { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
         
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-entry { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
+        @keyframes floatShield { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        @keyframes spinLogo { 100% { transform: rotate(360deg); } }
 
-        @keyframes floatShield {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-            100% { transform: translateY(0px); }
-        }
+        /* 🔄 PULL TO REFRESH */
+        #pullToRefresh { position: absolute; top: -60px; left: 0; width: 100%; display: flex; justify-content: center; align-items: center; height: 60px; z-index: 100; transition: transform 0.2s ease; pointer-events: none;}
+        #ptrSpinner { width: 36px; height: 36px; border-radius: 50%; box-shadow: var(--shadow-lg); background: white; padding: 4px; object-fit: contain; }
         
         /* Login */
         .login-container { align-items: center; justify-content: center; padding: 2rem; background: linear-gradient(135deg, var(--atm-red) 0%, var(--gray-100) 50%, var(--atm-blue) 100%); }
@@ -109,15 +107,15 @@
         .btn-logout { display: flex; align-items: center; gap: 0.5rem; width: 100%; padding: 0.75rem 1rem; background: rgba(255, 255, 255, 0.1); border: none; border-radius: var(--radius); color: white; cursor: pointer; transition: 0.3s; font-size: 0.95rem; justify-content: center; margin-bottom: 0.5rem; }
         .btn-logout:hover { background: rgba(255, 255, 255, 0.2); }
         
-        .main-content { flex: 1; margin-left: 280px; min-height: 100vh; display: flex; flex-direction: column; transition: margin-left 0.4s ease, background 0.3s; }
+        .main-content { flex: 1; margin-left: 280px; min-height: 100vh; display: flex; flex-direction: column; transition: margin-left 0.4s ease, background 0.3s; position: relative;}
         
-        /* 🎯 MODO PIZARRA (BLACKBOARD MODE) CSS */
+        /* 🎯 MODO PIZARRA (BLACKBOARD MODE) */
         body.blackboard-mode .sidebar { transform: translateX(-100%); }
         body.blackboard-mode .main-content { margin-left: 0; }
         body.blackboard-mode .main-header { transform: translateY(-100%); position: absolute; visibility: hidden; }
-        body.blackboard-mode .content-area { padding-top: 5rem; }
+        body.blackboard-mode .content-area { padding-top: 5rem; } 
 
-        /* Header normal */
+        /* ✨ GLASSMORPHISM HEADER */
         .main-header { 
             background: rgba(255, 255, 255, 0.85); 
             backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -186,7 +184,6 @@
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; flex-wrap: wrap; }
         
-        /* Modificadores para Modo Lista */
         .session-card.list-view { flex-direction: row; align-items: center; padding: 0; overflow: visible; }
         .session-card.list-view .badge-new { top: -8px; right: -8px; }
         .session-card.list-view .session-header { border-bottom: none; align-items: center; padding: 1rem 1.25rem; flex: 1; }
@@ -201,7 +198,7 @@
         #backToTopBtn.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
         #backToTopBtn:hover { background: var(--atm-red-dark); transform: translateY(-3px); }
 
-        /* Upload & Others... */
+        /* Upload & Admin */
         .upload-container { max-width: 600px; margin: 0 auto; background: var(--white); padding: 2.5rem; border-radius: var(--radius-xl); box-shadow: var(--shadow); transition: 0.3s; }
         .dropzone { position: relative; border: 2px dashed var(--gray-300); border-radius: var(--radius-lg); padding: 2.5rem 2rem; text-align: center; transition: 0.3s; background: var(--gray-50); margin-bottom: 1rem; }
         .dropzone:hover { border-color: var(--atm-red); background: var(--white); }
@@ -256,6 +253,10 @@
             .main-content { margin-left: 0; width: 100%; }
             .menu-toggle { display: block; color: var(--gray-800); }
             .search-bar { width: 200px; }
+            
+            /* En móvil/tablet, escondemos la sidebar premium del skeleton */
+            #skelSidebar { display: none !important; }
+            #skelMain { margin-left: 0 !important; }
         }
         @media (max-width: 768px) {
             .login-card { padding: 2rem 1.5rem; }
@@ -275,8 +276,24 @@
 <body>
 
     <div class="loading-container screen active" id="loadingPage">
-        <div class="spinner"></div>
-        <p style="color: var(--gray-600); font-weight: 500;">Cargando ATM Keepers 360...</p>
+        <div id="skelSidebar" class="sidebar" style="background: var(--atm-blue); transform: translateX(0);">
+            <div class="sidebar-header"><div class="skeleton" style="width:48px;height:48px;border-radius:8px;"></div><div class="skeleton" style="width:120px;height:24px;"></div></div>
+            <div style="padding: 2rem 1.5rem; display:flex; flex-direction:column; gap:1.5rem;">
+                <div class="skeleton" style="width:80%;height:20px;"></div><div class="skeleton" style="width:70%;height:20px;"></div><div class="skeleton" style="width:90%;height:20px;"></div>
+            </div>
+        </div>
+        <div id="skelMain" style="flex:1; margin-left:280px; width:100%; display:flex; flex-direction:column;">
+            <div style="padding:1.5rem 2rem; border-bottom:1px solid var(--gray-200); display:flex; align-items:center; gap:1.5rem;">
+                <div style="flex:1"><div class="skeleton" style="width:200px;height:28px;margin-bottom:0.5rem;"></div><div class="skeleton" style="width:300px;height:16px;"></div></div>
+                <div class="skeleton" style="width:250px;height:40px;border-radius:99px;"></div>
+            </div>
+            <div style="padding:2rem; flex:1;">
+                <div class="skeleton" style="width:150px;height:20px;margin-bottom:1.5rem;"></div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:1.25rem;">
+                    <div class="skeleton" style="height:100px;"></div><div class="skeleton" style="height:100px;"></div><div class="skeleton" style="height:100px;"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="login-container screen" id="loginPage">
@@ -302,6 +319,11 @@
     </div>
 
     <div class="app-container screen" id="appPage">
+        
+        <div id="pullToRefresh">
+            <img src="escudo.png" id="ptrSpinner" alt="Recargando...">
+        </div>
+
         <div class="sidebar-overlay" id="sidebarOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:99;" onclick="toggleMobileMenu()"></div>
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -514,11 +536,46 @@
         let searchQuery = "", activeTagFilter = null; 
         let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
         let myFavorites = JSON.parse(localStorage.getItem('atm_favorites')) || []; 
-        let hasCheckedSharedLink = false; // Evita bucle al abrir enlace
+        let hasCheckedSharedLink = false; 
         
         let db, auth;
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
+
+        // ==================== PULL TO REFRESH NATIVO ====================
+        let pStartY = 0; let pCurrentY = 0; let isPulling = false;
+        document.addEventListener('DOMContentLoaded', () => {
+            const ptrContainer = document.getElementById('pullToRefresh');
+            const ptrSpinner = document.getElementById('ptrSpinner');
+            
+            document.body.addEventListener('touchstart', e => {
+                if (window.scrollY === 0) pStartY = e.touches[0].clientY;
+            }, {passive: true});
+
+            document.body.addEventListener('touchmove', e => {
+                if (pStartY === 0 || window.scrollY > 0) return;
+                pCurrentY = e.touches[0].clientY;
+                const distance = pCurrentY - pStartY;
+                if (distance > 0 && distance < 120) {
+                    isPulling = true;
+                    ptrContainer.style.transform = `translateY(${distance}px)`;
+                    ptrSpinner.style.transform = `rotate(${distance * 3}deg)`;
+                }
+            }, {passive: true});
+
+            document.body.addEventListener('touchend', e => {
+                if (!isPulling) return;
+                isPulling = false;
+                const distance = pCurrentY - pStartY;
+                if (distance > 70) {
+                    ptrSpinner.style.animation = 'spinLogo 1s linear infinite';
+                    setTimeout(() => location.reload(), 600); // Recarga la app
+                } else {
+                    ptrContainer.style.transform = `translateY(0px)`;
+                }
+                pStartY = 0; pCurrentY = 0;
+            });
+        });
 
         function initFirebase() { 
             db = firebase.firestore(); 
@@ -689,13 +746,12 @@
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
-                // CÓDIGO NUEVO PARA COMPARTIR ENLACES
                 if (!hasCheckedSharedLink) {
                     hasCheckedSharedLink = true;
                     const params = new URLSearchParams(window.location.search);
                     const viewId = params.get('view');
                     if (viewId) {
-                        setTimeout(() => viewFile(viewId), 500); // Abre el archivo mágicamente si hay enlace
+                        setTimeout(() => viewFile(viewId), 500); 
                     }
                 }
 
@@ -759,20 +815,52 @@
             } catch(err) { showToast('Error al ordenar', 'error'); }
         }
 
-        // ==================== COMPARTIR WHATSAPP Y QR (VERSION SIN STORAGE) ====================
-        function shareWhatsApp(id) {
+        // ==================== COMPARTIR WHATSAPP Y QR NATIVO ====================
+        async function shareWhatsApp(id) {
             const s = sessionsData.find(x => x.id === id);
-            if (s) {
-                // Generamos enlace directo a nuestra App, forzando a que la abran de forma segura
-                const link = window.location.href.split('?')[0] + "?view=" + id;
-                const text = encodeURIComponent(`⚽ Mira esta sesión de ATM Keepers 360:\n*${s.title}*\n\n${link}`);
-                window.open(`https://api.whatsapp.com/send?text=${text}`, '_blank');
+            if (!s) return;
+
+            const ext = s.fileExt || 'pdf';
+            const filename = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
+            
+            if (s.pdfData) {
+                // Compartir ARCHIVO REAL a través de la API Nativa Móvil
+                try {
+                    const mimeType = s.fileType || 'application/pdf';
+                    const byteString = atob(s.pdfData.split(',')[1]);
+                    const ab = new ArrayBuffer(byteString.length);
+                    const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) {
+                        ia[i] = byteString.charCodeAt(i);
+                    }
+                    const blob = new Blob([ab], { type: mimeType });
+                    const file = new File([blob], filename, { type: mimeType });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: s.title,
+                            text: '⚽ Sesión ATM Keepers 360: ' + s.title
+                        });
+                        showToast('Archivo preparado para enviar', 'success');
+                    } else {
+                        // Fallback si está en ordenador
+                        showToast('Para compartir directo por WhatsApp usa un móvil o tablet. En PC, usa "Descargar".', 'error');
+                    }
+                } catch(e) {
+                    if (e.name !== 'AbortError') {
+                        showToast('Error al compartir. Usa la opción de Descargar.', 'error');
+                    }
+                }
+            } else {
+                showToast('Error leyendo archivo.', 'error');
             }
         }
 
         function openQRModal(id) {
             const s = sessionsData.find(x => x.id === id);
             if (s) {
+                // El QR abre el enlace de la propia app, que cargará el PDF
                 const link = window.location.href.split('?')[0] + "?view=" + id;
                 const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}&margin=10`;
                 document.getElementById('qrImage').src = qrUrl;
@@ -794,7 +882,6 @@
                 const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
                 const url = URL.createObjectURL(blob);
 
-                // 🛡️ DETECTOR INFALIBLE PARA TABLETS Y MÓVILES
                 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
                 const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024 || isTouch;
 
@@ -957,10 +1044,10 @@
 
             // 📲 Botones Sociales (WhatsApp y QR para TODOS los archivos)
             let shareBtns = `
-                <button class="btn btn-secondary" style="padding:0.5rem;" onclick="shareWhatsApp('${s.id}')" title="Compartir WhatsApp">
+                <button class="btn btn-secondary" style="padding:0.5rem;" onclick="shareWhatsApp('${s.id}')" title="Compartir Archivo por WhatsApp">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#25D366" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
                 </button>
-                <button class="btn btn-secondary" style="padding:0.5rem;" onclick="openQRModal('${s.id}')" title="Generar QR">
+                <button class="btn btn-secondary" style="padding:0.5rem;" onclick="openQRModal('${s.id}')" title="Generar QR de la sesión">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                 </button>`;
 
@@ -978,7 +1065,7 @@
             const isNew = (new Date() - new Date(s.uploadDate)) < 172800000; 
             const newBadgeHtml = isNew ? `<div class="badge-new">¡NUEVO!</div>` : '';
 
-            // ⭐ FAVORITO (SVG HUECO O RELLENO CON MARGEN PROTECTOR)
+            // ⭐ FAVORITO
             const isFav = myFavorites.includes(s.id);
             const starSvg = `<svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="${isFav ? 'currentColor' : 'none'}" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>`;
             const starHtml = `<button type="button" class="star-btn ${isFav ? 'active' : ''}" onclick="toggleFavorite('${s.id}', event)" title="Favorito">${starSvg}</button>`;
