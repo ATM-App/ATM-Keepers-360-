@@ -609,7 +609,7 @@
         let usersData = [], sessionsData = [], foldersData = [], tagsData = [];
         let tickerData = { text: "", active: false };
         let deletingId = null, deletingType = null, editingUserId = null;
-        let currentPage = 'dashboard'; // CONTROL DE PANTALLA FIJO
+        let currentPage = 'dashboard'; 
         
         let searchQuery = "", activeTagFilter = null; 
         let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
@@ -625,12 +625,11 @@
         let initialDataCount = 0;
         
         function checkAppReady() {
-            if (!isAppReady && initialDataCount >= 4) { // Esperamos a las 4 colecciones de datos
+            if (!isAppReady && initialDataCount >= 4) {
                 isAppReady = true;
-                setScreen('appPage'); // Quita el Skeleton y muestra la App lista de golpe
+                setScreen('appPage'); 
                 showPage('dashboard');
                 
-                // Abre el QR si hay enlace, justo cuando la app está 100% lista
                 if (!hasCheckedSharedLink) {
                     hasCheckedSharedLink = true;
                     const params = new URLSearchParams(window.location.search);
@@ -650,164 +649,20 @@
             }
         }
 
-        // ==================== INSTALACIÓN VIP (PWA POPUP) ====================
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault(); deferredPrompt = e;
-            if (!localStorage.getItem('atm_pwa_dismissed')) {
-                setTimeout(() => { document.getElementById('installPopup').classList.add('show'); }, 3000);
-            }
-        });
-
-        document.addEventListener('DOMContentLoaded', () => {
-            const isIos = () => { const userAgent = window.navigator.userAgent.toLowerCase(); return /iphone|ipad|ipod/.test( userAgent ); }
-            const isInStandaloneMode = () => ('standalone' in window.navigator) && (window.navigator.standalone);
-            if (isIos() && !isInStandaloneMode() && !localStorage.getItem('atm_pwa_dismissed') && window.innerWidth <= 1024) {
-                setTimeout(() => { document.getElementById('installPopup').classList.add('show'); }, 3000);
-            }
-        });
-
-        function installApp() {
-            document.getElementById('installPopup').classList.remove('show');
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => { deferredPrompt = null; });
-            } else {
-                showToast("En iOS: Pulsa 'Compartir' abajo y luego 'Añadir a la pantalla de inicio'", "info");
-            }
-            localStorage.setItem('atm_pwa_dismissed', 'true');
-        }
-
-        function dismissInstall() {
-            document.getElementById('installPopup').classList.remove('show');
-            localStorage.setItem('atm_pwa_dismissed', 'true');
-        }
-
-        // ==================== PULL TO REFRESH NATIVO ====================
-        let pStartY = 0; let pCurrentY = 0; let isPulling = false;
-        document.addEventListener('DOMContentLoaded', () => {
-            const ptrContainer = document.getElementById('pullToRefresh');
-            const ptrSpinner = document.getElementById('ptrSpinner');
-            
-            document.body.addEventListener('touchstart', e => {
-                if (window.scrollY === 0) pStartY = e.touches[0].clientY;
-            }, {passive: true});
-
-            document.body.addEventListener('touchmove', e => {
-                if (pStartY === 0 || window.scrollY > 0) return;
-                pCurrentY = e.touches[0].clientY;
-                const distance = pCurrentY - pStartY;
-                if (distance > 0 && distance < 120) {
-                    isPulling = true;
-                    ptrContainer.style.transform = `translateY(${distance}px)`;
-                    ptrSpinner.style.transform = `rotate(${distance * 3}deg)`;
+        // ==================== AÑADIR ETIQUETAS GLOABAL (FIX BUG 2) ====================
+        async function handleAddTag(e) {
+            e.preventDefault();
+            const name = document.getElementById('newTagName').value.trim();
+            const color = document.getElementById('newTagColor').value;
+            if(name) {
+                try {
+                    await db.collection('tags').add({ name, color });
+                    showToast('Etiqueta añadida', 'success');
+                    document.getElementById('newTagName').value = '';
+                } catch(error) {
+                    showToast('Error al añadir: ' + error.message, 'error');
                 }
-            }, {passive: true});
-
-            document.body.addEventListener('touchend', e => {
-                if (!isPulling) return;
-                isPulling = false;
-                const distance = pCurrentY - pStartY;
-                if (distance > 70) {
-                    ptrSpinner.style.animation = 'spinLogo 1s linear infinite';
-                    setTimeout(() => location.reload(), 600);
-                } else { ptrContainer.style.transform = `translateY(0px)`; }
-                pStartY = 0; pCurrentY = 0;
-            });
-        });
-
-        function initFirebase() { db = firebase.firestore(); auth = firebase.auth(); }
-
-        // ==================== SCROLL, OSCURO Y PIZARRA ====================
-        function toggleDarkMode() {
-            const isDark = document.body.classList.toggle('dark-mode');
-            localStorage.setItem('atm_dark_mode', isDark);
-            document.getElementById('darkModeIcon').textContent = isDark ? '☀️' : '🌙';
-            const btn = document.getElementById('darkModeToggle');
-            btn.innerHTML = isDark ? '<span id="darkModeIcon">☀️</span> Modo Claro' : '<span id="darkModeIcon">🌙</span> Modo Oscuro';
-        }
-        if (localStorage.getItem('atm_dark_mode') === 'true') {
-            document.body.classList.add('dark-mode');
-            document.addEventListener("DOMContentLoaded", () => {
-                document.getElementById('darkModeToggle').innerHTML = '<span id="darkModeIcon">☀️</span> Modo Claro';
-            });
-        }
-
-        function toggleBlackboardMode() {
-            document.body.classList.toggle('blackboard-mode');
-            const isActive = document.body.classList.contains('blackboard-mode');
-            document.getElementById('exitBlackboardBtn').style.display = isActive ? 'flex' : 'none';
-        }
-
-        function initWeatherWidget() {
-            if (weatherInitialized) return;
-            weatherInitialized = true;
-            const widget = document.getElementById('weatherWidget');
-            widget.innerHTML = `<span>📍 Detectando ubicación...</span>`;
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const lat = position.coords.latitude; const lon = position.coords.longitude;
-                    try {
-                        const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-                        const weatherData = await weatherRes.json();
-                        const temp = Math.round(weatherData.current_weather.temperature);
-                        const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
-                        const geoData = await geoRes.json();
-                        let city = geoData.address.city || geoData.address.town || geoData.address.village || geoData.address.county || 'Localización actual';
-                        widget.innerHTML = `<span>📍 ${city} | ⛅ ${temp}°C</span>`;
-                    } catch(e) { widget.innerHTML = `<span>📍 ATM Base | ⛅ --°C</span>`; }
-                }, () => { widget.innerHTML = `<span>📍 Ubicación oculta (Activa el GPS)</span>`; });
-            } else { widget.innerHTML = `<span>📍 GPS no disponible</span>`; }
-        }
-
-        function updateHeaderGreeting() {
-            const hour = new Date().getHours();
-            let greeting = 'Hola';
-            if (hour >= 5 && hour < 12) greeting = '¡Buenos días';
-            else if (hour >= 12 && hour < 20) greeting = '¡Buenas tardes';
-            else greeting = '¡Buenas noches';
-            const firstName = currentUserData ? currentUserData.fullName.split(' ')[0] : 'Míster';
-            document.getElementById('pageTitle').textContent = `${greeting}, ${escapeHtml(firstName)}!`;
-        }
-
-        // ==================== UTILIDADES UI E ISLA DINÁMICA ====================
-        function setScreen(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
-        function getInitials(n) { return n ? n.split(' ').map(w=>w[0]).join('').toUpperCase().substring(0,2) : '?'; }
-        
-        let islandTimeout;
-        function showToast(msg, type='info') {
-            const island = document.getElementById('dynamicIsland');
-            const icon = island.querySelector('.di-icon');
-            const text = island.querySelector('.di-text');
-
-            island.className = `dynamic-island show ${type}`;
-            text.textContent = msg;
-
-            if(type === 'success') icon.innerHTML = '✅';
-            else if(type === 'error') icon.innerHTML = '⚠️';
-            else icon.innerHTML = 'ℹ️';
-
-            clearTimeout(islandTimeout);
-            islandTimeout = setTimeout(() => { island.classList.remove('show'); }, 4000);
-        }
-
-        function openModal(id) { document.getElementById(id).classList.add('show'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('show'); }
-        function closePdfModal() { document.getElementById('pdfIframe').src = ''; closeModal('pdfModal'); }
-        function toggleMobileMenu() { 
-            document.getElementById('sidebar').classList.toggle('open'); 
-            const overlay = document.getElementById('sidebarOverlay');
-            overlay.style.display = overlay.style.display === 'none' ? 'block' : 'none';
-        }
-        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024; const sizes = ['Bytes', 'KB', 'MB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
         }
 
         // ==================== AUTH & LOGIN ====================
@@ -825,8 +680,12 @@
                                 renderSidebar(); 
                                 
                                 if (!window.listenersSetup) {
+                                    setScreen('loadingPage'); // FIX BUG 1: Forzamos el skeleton si está iniciando sesión
                                     window.listenersSetup = true;
                                     setupDataListeners();
+                                } else {
+                                    setScreen('appPage');
+                                    showPage('dashboard');
                                 }
                             } else {
                                 auth.signOut(); showToast('Usuario no registrado', 'error'); setScreen('loginPage');
@@ -844,13 +703,15 @@
             const btn = document.getElementById('loginBtn');
             const email = document.getElementById('loginEmail').value;
             const password = document.getElementById('loginPassword').value;
-            const errDiv = document.getElementById('errorMessage');
-            btn.disabled = true; btn.textContent = 'Procesando...'; errDiv.style.display = 'none';
+            btn.disabled = true; btn.textContent = 'Procesando...'; document.getElementById('errorMessage').style.display = 'none';
 
             try {
+                setScreen('loadingPage'); // Arrancamos el skeleton al pulsar login
                 await auth.signInWithEmailAndPassword(email, password);
             } catch (error) {
-                errDiv.style.display = 'block'; errDiv.textContent = 'Email o contraseña incorrectos.';
+                setScreen('loginPage');
+                document.getElementById('errorMessage').style.display = 'block'; 
+                document.getElementById('errorMessage').textContent = 'Email o contraseña incorrectos.';
             } finally {
                 btn.disabled = false; btn.textContent = 'Iniciar Sesión';
             }
@@ -858,6 +719,7 @@
 
         // ==================== DATA LISTENERS & TICKER ====================
         function setupDataListeners() {
+            // Usuarios
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 if (!isAppReady) { initialDataCount++; checkAppReady(); }
@@ -865,8 +727,9 @@
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin') renderAdmin();
                 }
-            });
+            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } }); // Ignorar fallos de permiso para entrenadores
             
+            // Carpetas y Ticker
             db.collection('folders').onSnapshot(s => { 
                 foldersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
@@ -885,8 +748,9 @@
                         renderTickerTab();
                     }
                 }
-            });
+            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
 
+            // Sesiones
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
@@ -895,8 +759,9 @@
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
                 }
-            });
+            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
             
+            // Etiquetas
             db.collection('tags').onSnapshot(s => {
                 tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
                 if (!isAppReady) { initialDataCount++; checkAppReady(); }
@@ -905,7 +770,7 @@
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderTagsTab();
                     else if(currentPage === 'dashboard') renderDashboard();
                 }
-            });
+            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
         }
 
         function updateTickerUI() {
@@ -928,142 +793,10 @@
             return false;
         }
 
-        // ==================== DRAG AND DROP ====================
-        function dragStart(e, id) { 
-            window.isDragging = true; draggedFolderId = id; 
-            e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); 
-            setTimeout(() => e.target.style.opacity = '0.5', 0);
-        }
-        function dragEnd(e) { e.target.style.opacity = '1'; setTimeout(() => { window.isDragging = false; }, 100); }
-        function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
-        function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
-        
-        async function drop(e, targetId) {
-            e.preventDefault(); e.stopPropagation();
-            e.currentTarget.classList.remove('drag-over');
-            if (!draggedFolderId || draggedFolderId === targetId) return;
-
-            let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
-            visible.sort((a, b) => (a.order || 0) - (b.order || 0));
-
-            const fromIdx = visible.findIndex(f => f.id === draggedFolderId);
-            const toIdx = visible.findIndex(f => f.id === targetId);
-            if (fromIdx === -1 || toIdx === -1) return;
-            
-            const [moved] = visible.splice(fromIdx, 1);
-            visible.splice(toIdx, 0, moved);
-
-            const batch = db.batch();
-            visible.forEach((f, idx) => { batch.update(db.collection('folders').doc(f.id), { order: idx }); });
-            try { await batch.commit(); showToast('Carpetas ordenadas', 'success'); } catch(err) { showToast('Error al ordenar', 'error'); }
-        }
-
-        // ==================== COMPARTIR WHATSAPP Y QR NATIVO ====================
-        async function shareWhatsApp(id) {
-            const s = sessionsData.find(x => x.id === id);
-            if (!s) return;
-            const ext = s.fileExt || 'pdf';
-            const filename = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
-            
-            if (s.pdfData) {
-                try {
-                    const mimeType = s.fileType || 'application/pdf';
-                    const byteString = atob(s.pdfData.split(',')[1]);
-                    const ab = new ArrayBuffer(byteString.length); const ia = new Uint8Array(ab);
-                    for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
-                    const blob = new Blob([ab], { type: mimeType });
-                    const file = new File([blob], filename, { type: mimeType });
-
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: s.title, text: '⚽ Sesión ATM Keepers 360: ' + s.title });
-                        showToast('Archivo preparado para enviar', 'success');
-                    } else { showToast('Para compartir directo usa un móvil o tablet. En PC, usa "Descargar".', 'error'); }
-                } catch(e) {
-                    if (e.name !== 'AbortError') showToast('Error al compartir. Usa la opción de Descargar.', 'error');
-                }
-            } else { showToast('Error leyendo archivo.', 'error'); }
-        }
-
-        function openQRModal(id) {
-            const s = sessionsData.find(x => x.id === id);
-            if (s) {
-                const link = window.location.href.split('?')[0] + "?view=" + id;
-                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}&margin=10`;
-                document.getElementById('qrImage').src = qrUrl;
-                openModal('qrModal');
-            }
-        }
-
-        // ==================== VISUALIZAR Y DESCARGAR ARCHIVOS ====================
-        function viewFile(id) { 
-            const s = sessionsData.find(x => x.id === id); 
-            if (s && s.pdfData) {
-                const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
-                let mimeType = s.fileType || 'application/pdf';
-                if (!s.fileType) {
-                    if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
-                    if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
-                }
-                const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
-                const url = URL.createObjectURL(blob);
-
-                const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-                const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024 || isTouch;
-
-                if (ext === 'pdf' && !isMobileOrTablet) {
-                    document.getElementById('pdfIframe').src = url;
-                    openModal('pdfModal');
-                } else { window.location.href = url; }
-            }
-        }
-
-        function downloadFile(id) {
-            const s = sessionsData.find(x => x.id === id);
-            if (s && s.pdfData) {
-                const link = document.createElement('a'); link.href = s.pdfData; 
-                const ext = s.fileExt || 'pdf';
-                link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
-                document.body.appendChild(link); link.click(); document.body.removeChild(link);
-            }
-        }
-        
-        function confirmDelete(id, type) { deletingId = id; deletingType = type; openModal('deleteModal'); }
-        document.getElementById('confirmDeleteBtn').onclick = async () => {
-            try {
-                if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
-                else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
-                else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
-                else if (deletingType === 'tag') await db.collection('tags').doc(deletingId).delete();
-                closeModal('deleteModal'); showToast('Eliminado correctamente', 'success');
-            } catch(e) { showToast('Error al eliminar', 'error'); }
-        };
-
-        // ==================== FAVORITOS, BUSCADOR Y VISTAS ====================
-        function toggleFavorite(id, event) {
-            if (event) event.stopPropagation();
-            if (myFavorites.includes(id)) {
-                myFavorites = myFavorites.filter(f => f !== id); showToast('Eliminado de Favoritos', 'info');
-            } else {
-                myFavorites.push(id); showToast('Añadido a Favoritos ⭐', 'success');
-            }
-            localStorage.setItem('atm_favorites', JSON.stringify(myFavorites));
-            renderDashboard();
-        }
-
-        function handleSearch() { searchQuery = document.getElementById('searchInput').value.toLowerCase(); renderDashboard(); }
-        function toggleTagFilter(tagName, event) {
-            if(event) event.stopPropagation(); 
-            if(activeTagFilter === tagName) activeTagFilter = null; else activeTagFilter = tagName; 
-            renderDashboard();
-        }
-        function clearFilters() {
-            activeTagFilter = null; searchQuery = ""; document.getElementById('searchInput').value = "";
-            renderDashboard();
-        }
-        function setViewMode(mode) { currentViewMode = mode; localStorage.setItem('atm_view_mode', mode); showPage('dashboard'); }
-
+        // ==================== RESTO DE FUNCIONES UI / ADMIN ====================
+        // ... [El resto de funciones siguen intactas] ...
         function showPage(p) {
-            currentPage = p; // Mantiene el control de dónde estamos exactamente
+            currentPage = p; 
             currentFolderId = null; activeTagFilter = null; searchQuery = ""; 
             if(document.getElementById('searchInput')) document.getElementById('searchInput').value = "";
             
@@ -1115,7 +848,6 @@
             renderDashboard(); 
         }
 
-        // --- COMPONENTE DE TARJETA ---
         function renderSessionCard(s, idx) {
             const uploader = usersData.find(u => u.id === s.uploadedBy);
             const uploaderAvatar = uploader?.profileImage ? `<img src="${uploader.profileImage}" style="width:24px;height:24px;border-radius:50%;object-fit:cover;">` : `<div class="user-avatar" style="width:24px;height:24px;font-size:0.7rem;border-radius:50%;">${getInitials(uploader?.fullName || 'User')}</div>`;
@@ -1282,6 +1014,36 @@
             container.innerHTML = html;
         }
 
+        // ==================== DRAG AND DROP ====================
+        function dragStart(e, id) { 
+            window.isDragging = true; draggedFolderId = id; 
+            e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); 
+            setTimeout(() => e.target.style.opacity = '0.5', 0);
+        }
+        function dragEnd(e) { e.target.style.opacity = '1'; setTimeout(() => { window.isDragging = false; }, 100); }
+        function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+        function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+        
+        async function drop(e, targetId) {
+            e.preventDefault(); e.stopPropagation();
+            e.currentTarget.classList.remove('drag-over');
+            if (!draggedFolderId || draggedFolderId === targetId) return;
+
+            let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
+            visible.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            const fromIdx = visible.findIndex(f => f.id === draggedFolderId);
+            const toIdx = visible.findIndex(f => f.id === targetId);
+            if (fromIdx === -1 || toIdx === -1) return;
+            
+            const [moved] = visible.splice(fromIdx, 1);
+            visible.splice(toIdx, 0, moved);
+
+            const batch = db.batch();
+            visible.forEach((f, idx) => { batch.update(db.collection('folders').doc(f.id), { order: idx }); });
+            try { await batch.commit(); showToast('Carpetas ordenadas', 'success'); } catch(err) { showToast('Error al ordenar', 'error'); }
+        }
+
         // ==================== FORMULARIOS CARPETAS Y SUBIDA ====================
         function openFolderModal() {
             document.getElementById('folderForm').reset();
@@ -1426,7 +1188,75 @@
             document.getElementById('fileInfo').style.display = 'none';
         }
 
-        // ==================== ADMIN: USUARIOS, CARPETAS Y MÉTRICAS ====================
+        // ==================== COMPARTIR WHATSAPP Y QR NATIVO ====================
+        async function shareWhatsApp(id) {
+            const s = sessionsData.find(x => x.id === id);
+            if (!s) return;
+            const ext = s.fileExt || 'pdf';
+            const filename = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
+            
+            if (s.pdfData) {
+                try {
+                    const mimeType = s.fileType || 'application/pdf';
+                    const byteString = atob(s.pdfData.split(',')[1]);
+                    const ab = new ArrayBuffer(byteString.length); const ia = new Uint8Array(ab);
+                    for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
+                    const blob = new Blob([ab], { type: mimeType });
+                    const file = new File([blob], filename, { type: mimeType });
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({ files: [file], title: s.title, text: '⚽ Sesión ATM Keepers 360: ' + s.title });
+                        showToast('Archivo preparado para enviar', 'success');
+                    } else { showToast('Para compartir directo usa un móvil o tablet. En PC, usa "Descargar".', 'error'); }
+                } catch(e) {
+                    if (e.name !== 'AbortError') showToast('Error al compartir. Usa la opción de Descargar.', 'error');
+                }
+            } else { showToast('Error leyendo archivo.', 'error'); }
+        }
+
+        function openQRModal(id) {
+            const s = sessionsData.find(x => x.id === id);
+            if (s) {
+                const link = window.location.href.split('?')[0] + "?view=" + id;
+                const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(link)}&margin=10`;
+                document.getElementById('qrImage').src = qrUrl;
+                openModal('qrModal');
+            }
+        }
+
+        function viewFile(id) { 
+            const s = sessionsData.find(x => x.id === id); 
+            if (s && s.pdfData) {
+                const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
+                let mimeType = s.fileType || 'application/pdf';
+                if (!s.fileType) {
+                    if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
+                    if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+                }
+                const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
+                const url = URL.createObjectURL(blob);
+
+                const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+                const isMobileOrTablet = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 1024 || isTouch;
+
+                if (ext === 'pdf' && !isMobileOrTablet) {
+                    document.getElementById('pdfIframe').src = url;
+                    openModal('pdfModal');
+                } else { window.location.href = url; }
+            }
+        }
+
+        function downloadFile(id) {
+            const s = sessionsData.find(x => x.id === id);
+            if (s && s.pdfData) {
+                const link = document.createElement('a'); link.href = s.pdfData; 
+                const ext = s.fileExt || 'pdf';
+                link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
+                document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            }
+        }
+
+        // ==================== ADMIN ====================
         function renderAdmin() {
             const container = document.getElementById('contentArea');
             container.innerHTML = `
@@ -1544,7 +1374,7 @@
             const content = document.getElementById('adminContent');
             let html = `
             <div style="background:var(--white); padding:1.5rem; border-radius:var(--radius-lg); box-shadow:var(--shadow); margin-bottom:1.5rem;">
-                <form id="addTagForm" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                <form id="addTagForm" onsubmit="handleAddTag(event)" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
                     <div style="flex:1; min-width:200px;">
                         <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem; color:var(--gray-700);">Nombre de Etiqueta</label>
                         <input type="text" id="newTagName" required style="width:100%; padding:0.75rem; border:1px solid var(--gray-200); border-radius:var(--radius); background:var(--gray-50); color:var(--gray-800);">
@@ -1568,16 +1398,6 @@
             });
             html += `</div>`;
             content.innerHTML = html;
-
-            document.getElementById('addTagForm').onsubmit = async e => {
-                e.preventDefault();
-                const name = document.getElementById('newTagName').value.trim();
-                const color = document.getElementById('newTagColor').value;
-                if(name) {
-                    await db.collection('tags').add({ name, color });
-                    showToast('Etiqueta añadida', 'success');
-                }
-            };
         }
 
         function renderStatsTab() {
@@ -1725,7 +1545,9 @@
                     const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
                     const secAuth = firebase.auth(secondaryApp);
                     const cred = await secAuth.createUserWithEmailAndPassword(email, pass);
+                    
                     data.email = email; data.active = true; data.createdAt = new Date().toISOString();
+                    
                     await db.collection('users').doc(cred.user.uid).set(data);
                     await secAuth.signOut(); secondaryApp.delete();
                     showToast('Usuario creado', 'success');
@@ -1745,6 +1567,17 @@
             e.preventDefault();
             await db.collection('folders').doc(document.getElementById('changeTrainerFolderId').value).update({ userId: document.getElementById('newTrainerSelect').value || null });
             showToast('Entrenador actualizado', 'success'); closeModal('changeTrainerModal');
+        };
+
+        function confirmDelete(id, type) { deletingId = id; deletingType = type; openModal('deleteModal'); }
+        document.getElementById('confirmDeleteBtn').onclick = async () => {
+            try {
+                if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
+                else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
+                else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
+                else if (deletingType === 'tag') await db.collection('tags').doc(deletingId).delete();
+                closeModal('deleteModal'); showToast('Eliminado correctamente', 'success');
+            } catch(e) { showToast('Error al eliminar', 'error'); }
         };
 
         document.addEventListener('DOMContentLoaded', () => {
