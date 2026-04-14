@@ -192,6 +192,7 @@
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; flex-wrap: wrap; }
         
+        /* Modificadores para Modo Lista */
         .session-card.list-view { flex-direction: row; align-items: center; padding: 0; overflow: visible; }
         .session-card.list-view .badge-new { top: -8px; right: -8px; }
         .session-card.list-view .session-header { border-bottom: none; align-items: center; padding: 1rem 1.25rem; flex: 1; }
@@ -556,7 +557,7 @@
         window.isDragging = false; 
         let currentUser = null, currentUserData = null, currentFolderId = null;
         let usersData = [], sessionsData = [], foldersData = [], tagsData = [];
-        let tickerData = { text: "", active: false }; // Variable para el Ticker
+        let tickerData = { text: "", active: false }; // Ticker Data
         let deletingId = null, deletingType = null, editingUserId = null;
         
         let searchQuery = "", activeTagFilter = null; 
@@ -595,7 +596,7 @@
                 const distance = pCurrentY - pStartY;
                 if (distance > 70) {
                     ptrSpinner.style.animation = 'spinLogo 1s linear infinite';
-                    setTimeout(() => location.reload(), 600); // Recarga la app
+                    setTimeout(() => location.reload(), 600);
                 } else {
                     ptrContainer.style.transform = `translateY(0px)`;
                 }
@@ -759,19 +760,35 @@
 
         // ==================== DATA LISTENERS & TICKER ====================
         function setupDataListeners() {
-            // Usuarios
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración') renderAdmin();
             });
-            // Carpetas
+            
+            // LA MAGIA DEL TICKER CAMUFLADO ESTÁ AQUÍ
             db.collection('folders').onSnapshot(s => { 
                 foldersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
+                
+                // Extraer el Ticker de la carpeta oculta
+                const tickerDoc = foldersData.find(f => f.id === '_TICKER_SETTINGS_');
+                if (tickerDoc) {
+                    tickerData = { text: tickerDoc.text, active: tickerDoc.active };
+                } else {
+                    tickerData = { text: '', active: false };
+                }
+                updateTickerUI();
+
                 if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(2)')?.classList.contains('active')) renderFoldersTab();
+                
+                // Refrescar el panel si el admin está en la pestaña de Anuncios
+                const activeTab = document.querySelector('.admin-tab.active');
+                if(document.getElementById('pageTitle').textContent === 'Administración' && activeTab && activeTab.textContent.includes('Anuncios')) {
+                    renderTickerTab();
+                }
             });
-            // Sesiones
+
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
@@ -796,32 +813,16 @@
                 if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(4)')?.classList.contains('active')) renderStatsTab();
             });
-            // Etiquetas
+            
             db.collection('tags').onSnapshot(s => {
                 tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
                 if(document.getElementById('pageTitle').textContent === 'Subir Archivo') renderUpload();
                 if(document.getElementById('pageTitle').textContent === 'Administración' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderTagsTab();
                 if(document.getElementById('pageTitle').textContent.includes('Hola') || document.getElementById('pageTitle').textContent.includes('Buen')) renderDashboard();
             });
-
-            // 📰 Ticker (Ajustes Globales)
-            db.collection('settings').doc('ticker').onSnapshot(doc => {
-                if (doc.exists) {
-                    tickerData = doc.data();
-                } else {
-                    tickerData = { text: '', active: false };
-                }
-                updateTickerUI();
-                
-                // Actualizar la pestaña de admin si está abierta
-                const activeTab = document.querySelector('.admin-tab.active');
-                if(document.getElementById('pageTitle').textContent === 'Administración' && activeTab && activeTab.textContent.includes('Anuncios')) {
-                    renderTickerTab();
-                }
-            });
         }
 
-        // Mostrar u ocultar el Ticker en el Frontend
+        // ==================== UPDATE TICKER UI ====================
         function updateTickerUI() {
             const wrap = document.getElementById('mainTicker');
             const txt = document.getElementById('tickerText');
@@ -864,7 +865,7 @@
             e.currentTarget.classList.remove('drag-over');
             if (!draggedFolderId || draggedFolderId === targetId) return;
 
-            let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
+            let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
             visible.sort((a, b) => (a.order || 0) - (b.order || 0));
 
             const fromIdx = visible.findIndex(f => f.id === draggedFolderId);
@@ -1178,7 +1179,8 @@
                     <button class="btn btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.8rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="clearFilters()">Limpiar Filtros ✕</button>
                 </div>`;
                 
-                visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && (!searchQuery || f.name.toLowerCase().includes(searchQuery)));
+                // Excluimos la carpeta de settings camuflada
+                visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_' && (!searchQuery || f.name.toLowerCase().includes(searchQuery)));
                 visibleSessions = sessionsData.filter(s => {
                     if (!isFolderAllowed(s.folderId)) return false;
                     const matchSearch = !searchQuery || s.title.toLowerCase().includes(searchQuery) || (s.tags && s.tags.join(' ').toLowerCase().includes(searchQuery));
@@ -1217,7 +1219,7 @@
                     }
                 }
 
-                visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
+                visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
                 visibleFolders.sort((a, b) => (a.order || 0) - (b.order || 0));
                 
                 visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId && (currentFolderId !== null || !myFavorites.includes(s.id)));
@@ -1276,7 +1278,7 @@
             const parentId = document.getElementById('folderParentId').value || null;
             const userId = parentId ? null : (document.getElementById('folderUserGroup').style.display === 'block' ? document.getElementById('folderUser').value : currentUser.uid);
             
-            const sibs = foldersData.filter(f => f.parentId === parentId);
+            const sibs = foldersData.filter(f => f.parentId === parentId && f.id !== '_TICKER_SETTINGS_');
             await db.collection('folders').add({
                 name: document.getElementById('folderName').value, parentId, userId: userId || null, order: sibs.length, createdAt: new Date().toISOString()
             });
@@ -1285,7 +1287,7 @@
 
         function getFolderOptionsHtml(folders, parentId = null, level = 0) {
             let html = '';
-            folders.filter(f => (f.parentId || null) === parentId).forEach(f => {
+            folders.filter(f => (f.parentId || null) === parentId && f.id !== '_TICKER_SETTINGS_').forEach(f => {
                 const indent = '&nbsp;'.repeat(level * 4) + (level > 0 ? '└ ' : '');
                 html += `<option value="${f.id}">${indent}${escapeHtml(f.name)}</option>`;
                 html += getFolderOptionsHtml(folders, f.id, level + 1);
@@ -1294,7 +1296,7 @@
         }
 
         function renderUpload() {
-            const allowed = foldersData.filter(f => isFolderAllowed(f.id));
+            const allowed = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
             
             let tagsHtml = tagsData.map(t => `
                 <label style="display:flex; align-items:center; gap:0.3rem; cursor:pointer; color:var(--gray-800);">
@@ -1354,6 +1356,7 @@
                 e.preventDefault();
                 const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
                 
+                // LÍMITE DE 1MB RECUPERADO (Porque no hay Firebase Storage)
                 if (file.size > 1048576) {
                     return showToast("El archivo supera 1MB (Límite estricto de base de datos)", "error");
                 }
@@ -1373,7 +1376,7 @@
                         tags: checkedTags,
                         fileType: file.type, 
                         fileExt: file.name.split('.').pop().toLowerCase(),
-                        pdfData: reader.result, 
+                        pdfData: reader.result, // Guardamos como texto directamente
                         uploadDate: new Date().toISOString(), 
                         uploadedBy: currentUser.uid
                     }).then(() => { 
@@ -1430,7 +1433,7 @@
             else if (tab === 'ticker') renderTickerTab();
         }
 
-        // 📢 PESTAÑA DE TICKER EN ADMIN
+        // 📢 PESTAÑA DE TICKER EN ADMIN (GUARDADO CAMUFLADO)
         function renderTickerTab() {
             const content = document.getElementById('adminContent');
             content.innerHTML = `
@@ -1457,7 +1460,14 @@
                 const isActive = document.getElementById('tickerToggle').classList.contains('active');
                 
                 try {
-                    await db.collection('settings').doc('ticker').set({ text: text, active: isActive }, { merge: true });
+                    // Guardamos el ticker camuflado dentro de la colección "folders" a la que sí hay permisos
+                    await db.collection('folders').doc('_TICKER_SETTINGS_').set({ 
+                        name: 'SYSTEM_TICKER',
+                        parentId: 'SYSTEM_HIDDEN',
+                        text: text, 
+                        active: isActive,
+                        userId: currentUser.uid // Para no tener problema con los permisos de lectura
+                    }, { merge: true });
                     showToast('Ticker publicado correctamente', 'success');
                 } catch(error) {
                     showToast('Error al publicar: ' + error.message, 'error');
@@ -1494,7 +1504,7 @@
 
         function renderFoldersTab() {
             const content = document.getElementById('adminContent');
-            const rootFolders = foldersData.filter(f => !f.parentId); 
+            const rootFolders = foldersData.filter(f => !f.parentId && f.id !== '_TICKER_SETTINGS_'); 
             
             if (rootFolders.length === 0) {
                 content.innerHTML = `<div class="empty-state"><h3>No hay carpetas principales</h3></div>`; return;
@@ -1573,7 +1583,7 @@
                     </div>
                     <div style="flex:1; min-width:200px; background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow); border-left:4px solid var(--atm-blue);">
                         <h3 style="color:var(--gray-500); font-size:0.9rem;">Total de Carpetas</h3>
-                        <p style="font-size:2rem; font-weight:bold; color:var(--gray-800); margin-top:0.5rem;">${foldersData.length}</p>
+                        <p style="font-size:2rem; font-weight:bold; color:var(--gray-800); margin-top:0.5rem;">${foldersData.filter(f => f.id !== '_TICKER_SETTINGS_').length}</p>
                     </div>
                 </div>
                 <div class="stats-grid">
