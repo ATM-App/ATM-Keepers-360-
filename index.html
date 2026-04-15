@@ -55,6 +55,7 @@
         .skeleton { background: var(--gray-200); border-radius: var(--radius); animation: pulseSkel 1.5s infinite ease-in-out; }
         body.dark-mode .skeleton { background: var(--gray-700); }
         @keyframes pulseSkel { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-entry { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         @keyframes floatShield { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
@@ -93,7 +94,7 @@
         body.dark-mode .install-title { color: var(--white); }
         .install-desc { color: var(--gray-500); font-size: 0.95rem; margin-bottom: 2rem; line-height: 1.5; }
         .install-actions { display: flex; flex-direction: column; gap: 0.75rem; }
-
+        
         /* 🎯 OBJETIVOS Y SMART CHIPS */
         .objective-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: linear-gradient(135deg, rgba(203,53,36,0.1), rgba(203,53,36,0.03)); color: var(--atm-red); border: 1px solid rgba(203,53,36,0.2); padding: 0.35rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 600; margin-top: 0.5rem; transition: 0.2s;}
         .objective-badge:hover { transform: scale(1.02); }
@@ -218,6 +219,7 @@
         .session-meta { font-size: 0.85rem; color: var(--gray-500); margin: 0; }
         .session-footer { padding: 1rem 1.25rem; background: var(--gray-50); display: flex; gap: 0.5rem; flex-wrap: wrap; }
         
+        /* Modificadores para Modo Lista */
         .session-card.list-view { flex-direction: row; align-items: center; padding: 0; overflow: visible; }
         .session-card.list-view .badge-new { top: -8px; right: -8px; }
         .session-card.list-view .session-header { border-bottom: none; align-items: center; padding: 1rem 1.25rem; flex: 1; }
@@ -639,6 +641,30 @@
                     }
                 }
             }
+        }
+
+        // ==================== FUNCIONES PUENTE RECUPERADAS (FIX DEFINITIVO) ====================
+        function openFolderModal() {
+            document.getElementById('folderForm').reset();
+            document.getElementById('folderParentId').value = currentFolderId || '';
+            const g = document.getElementById('folderUserGroup');
+            if (!currentFolderId && currentUserData && currentUserData.role === 'admin') {
+                g.style.display = 'block';
+                document.getElementById('folderUser').innerHTML = `<option value="">Sin asignar</option>` + usersData.filter(u=>u.role==='coach').map(u => `<option value="${u.id}">${escapeHtml(u.fullName)}</option>`).join('');
+            } else {
+                g.style.display = 'none';
+            }
+            openModal('folderModal');
+        }
+
+        function getFolderOptionsHtml(folders, parentId = null, level = 0) {
+            let html = '';
+            folders.filter(f => (f.parentId || null) === parentId && f.id !== '_TICKER_SETTINGS_').forEach(f => {
+                const indent = '&nbsp;'.repeat(level * 4) + (level > 0 ? '└ ' : '');
+                html += `<option value="${f.id}">${indent}${escapeHtml(f.name)}</option>`;
+                html += getFolderOptionsHtml(folders, f.id, level + 1);
+            });
+            return html;
         }
 
         // ==================== FORMULARIOS GLOBALES A PRUEBA DE FALLOS ====================
@@ -1179,7 +1205,7 @@
             let currentObj = s.objective || (s.tags && s.tags[0]); 
             if (currentObj) {
                 objectiveHtml = `
-                <div class="objective-badge" onclick="toggleObjectiveFilter('${escapeHtml(currentObj)}', event)">
+                <div class="objective-badge" onclick="toggleObjectiveFilter('${escapeHtml(currentObj)}', event)" style="cursor:pointer; ${activeObjectiveFilter===currentObj ? 'background:var(--atm-red); color:white;' : ''}">
                     🎯 Objetivo: <strong>${escapeHtml(currentObj)}</strong>
                 </div>`;
             }
@@ -1231,6 +1257,7 @@
             let visibleFolders = [];
             let visibleSessions = [];
 
+            // Extraer los 5 objetivos más usados para los Smart Chips
             const objCounts = {};
             sessionsData.forEach(s => {
                 let obj = s.objective || (s.tags && s.tags[0]);
@@ -1263,6 +1290,7 @@
                 }
                 html += `</div>`;
 
+                // 🔍 SMART CHIPS DE OBJETIVOS
                 if (currentFolderId === null && topObjs.length > 0) {
                     html += `<div class="smart-chips">`;
                     topObjs.forEach(obj => {
@@ -1334,7 +1362,7 @@
             container.innerHTML = html;
         }
 
-        // ==================== FORMULARIOS DE SUBIDA (NUEVO SISTEMA OBJETIVOS) ====================
+        // ==================== FORMULARIOS DE SUBIDA ====================
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
             
@@ -1445,7 +1473,7 @@
             document.getElementById('fileInfo').style.display = 'none';
         }
 
-        // ==================== ADMIN (SIN PESTAÑA ETIQUETAS) ====================
+        // ==================== ADMIN ====================
         function renderAdmin() {
             const container = document.getElementById('contentArea');
             container.innerHTML = `
@@ -1621,7 +1649,6 @@
             });
         }
 
-        // --- FOTO PERFIL ---
         function handleProfileImage(event) {
             const input = event.target;
             if (input.files && input.files[0]) {
@@ -1638,6 +1665,60 @@
             document.getElementById('profileImageInput').value = ''; document.getElementById('profileImageData').value = '';
             document.getElementById('profileImagePreview').innerHTML = `<div class="user-avatar" style="width:80px;height:80px;font-size:2rem;background:var(--gray-300);">?</div>`;
         }
+
+        async function toggleUserActive(id) {
+            const user = usersData.find(u => u.id === id);
+            await db.collection('users').doc(id).update({ active: !user.active });
+        }
+
+        async function changePassword(id) {
+            const user = usersData.find(u => u.id === id);
+            const newPass = prompt(`Nueva contraseña para ${user.fullName} (Mínimo 6 caracteres):`);
+            if (newPass && newPass.length >= 6) {
+                await db.collection('users').doc(id).update({ tempPassword: newPass, passwordResetRequired: true });
+                showToast('Cambio de contraseña registrado', 'success');
+            } else if (newPass) { showToast('Mínimo 6 caracteres', 'error'); }
+        }
+
+        function openUserModal(id = null) {
+            editingUserId = id; document.getElementById('userForm').reset(); document.getElementById('userId').value = id || '';
+            const passGrp = document.getElementById('passwordGroup'), editGrp = document.getElementById('editPasswordGroup');
+            removeProfileImage(); 
+            
+            if (id) {
+                const u = usersData.find(x => x.id === id);
+                document.getElementById('userEmail').value = u.email; document.getElementById('userEmail').disabled = true;
+                document.getElementById('userUsername').value = u.username || '';
+                document.getElementById('userFullName').value = u.fullName; document.getElementById('userRole').value = u.role;
+                if(u.profileImage) {
+                    document.getElementById('profileImageData').value = u.profileImage;
+                    document.getElementById('profileImagePreview').innerHTML = `<img src="${u.profileImage}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--atm-red);"> <button type="button" class="btn btn-secondary" style="margin-top:0.5rem; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="removeProfileImage()">Quitar</button>`;
+                }
+                passGrp.style.display = 'none'; document.getElementById('userPassword').required = false; editGrp.style.display = 'block';
+            } else {
+                document.getElementById('userEmail').disabled = false; passGrp.style.display = 'block';
+                document.getElementById('userPassword').required = true; editGrp.style.display = 'none';
+            }
+            openModal('userModal');
+        }
+
+        function editUser(id) { openUserModal(id); }
+
+        function showChangeTrainerModal(id) {
+            document.getElementById('changeTrainerFolderId').value = id;
+            document.getElementById('newTrainerSelect').innerHTML = `<option value="">Sin asignar</option>` + usersData.filter(u=>u.role==='coach').map(u => `<option value="${u.id}">${escapeHtml(u.fullName)}</option>`).join('');
+            openModal('changeTrainerModal');
+        }
+
+        function confirmDelete(id, type) { deletingId = id; deletingType = type; openModal('deleteModal'); }
+        document.getElementById('confirmDeleteBtn').onclick = async () => {
+            try {
+                if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
+                else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
+                else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
+                closeModal('deleteModal'); showToast('Eliminado correctamente', 'success');
+            } catch(e) { showToast('Error al eliminar', 'error'); }
+        };
 
         document.addEventListener('DOMContentLoaded', () => {
             try { initFirebase(); setupAuthListener(); } 
