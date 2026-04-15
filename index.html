@@ -55,6 +55,7 @@
         .skeleton { background: var(--gray-200); border-radius: var(--radius); animation: pulseSkel 1.5s infinite ease-in-out; }
         body.dark-mode .skeleton { background: var(--gray-700); }
         @keyframes pulseSkel { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-entry { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         @keyframes floatShield { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
@@ -125,6 +126,8 @@
         .login-card { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 3rem; width: 100%; max-width: 420px; transition: 0.3s; }
         .login-header { text-align: center; margin-bottom: 2rem; }
         .logo-escudo { width: 120px; height: 120px; border-radius: var(--radius); margin-bottom: 1.5rem; object-fit: contain; background: var(--white); padding: 0.5rem; box-shadow: var(--shadow); animation: floatShield 3s ease-in-out infinite; }
+        .login-header h1 { font-size: 1.75rem; color: var(--atm-blue); margin-bottom: 0.5rem; }
+        .login-header .subtitle { color: var(--gray-500); font-size: 0.95rem; margin: 0; }
         
         .app-container { flex-direction: row; }
         .sidebar { width: 280px; background: var(--atm-blue); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; height: 100dvh; z-index: 100; transition: transform 0.4s ease; }
@@ -253,6 +256,14 @@
         .role-badge.coach { background: rgba(39, 46, 97, 0.1); color: var(--atm-blue); }
         .action-buttons { display: flex; gap: 0.5rem; }
         .btn-icon-action { width: 36px; height: 36px; padding: 0; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: var(--gray-800); }
+        
+        /* 🔥 ÁRBOL DE CARPETAS (ADMIN) */
+        .admin-folder-tree { display: flex; flex-direction: column; gap: 0.5rem; }
+        .admin-folder-row { display: flex; align-items: center; background: var(--white); border: 1px solid var(--gray-200); padding: 1rem; border-radius: var(--radius); justify-content: space-between; box-shadow: var(--shadow); transition: 0.2s;}
+        .admin-folder-row:hover { border-color: var(--atm-red); transform: translateX(2px); }
+        body.dark-mode .admin-folder-row { background: var(--gray-800); border-color: var(--gray-700); }
+        .admin-folder-info { display: flex; align-items: center; gap: 1rem; }
+
         .toggle-switch { position: relative; width: 44px; height: 24px; background: var(--gray-300); border-radius: 12px; cursor: pointer; transition: 0.3s; }
         .toggle-switch.active { background: #059669; }
         .toggle-switch::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
@@ -1203,7 +1214,7 @@
             let currentObj = s.objective || (s.tags && s.tags[0]); 
             if (currentObj) {
                 objectiveHtml = `
-                <div class="objective-badge" onclick="toggleObjectiveFilter('${escapeHtml(currentObj)}', event)">
+                <div class="objective-badge" onclick="toggleObjectiveFilter('${escapeHtml(currentObj)}', event)" style="cursor:pointer; ${activeObjectiveFilter===currentObj ? 'background:var(--atm-red); color:white;' : ''}">
                     🎯 Objetivo: <strong>${escapeHtml(currentObj)}</strong>
                 </div>`;
             }
@@ -1358,7 +1369,7 @@
             container.innerHTML = html;
         }
 
-        // ==================== FORMULARIOS DE SUBIDA (NUEVO SISTEMA OBJETIVOS) ====================
+        // ==================== FORMULARIOS DE SUBIDA ====================
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
             
@@ -1469,7 +1480,7 @@
             document.getElementById('fileInfo').style.display = 'none';
         }
 
-        // ==================== ADMIN (SIN PESTAÑA ETIQUETAS) ====================
+        // ==================== ADMIN: ÁRBOL DE CARPETAS JERÁRQUICO ====================
         function renderAdmin() {
             const container = document.getElementById('contentArea');
             container.innerHTML = `
@@ -1554,37 +1565,54 @@
             content.innerHTML = html;
         }
 
-        // ==================== RENDER FOLDERS TAB MODIFICADO (TODAS LAS CARPETAS) ====================
-        function renderFoldersTab() {
-            const content = document.getElementById('adminContent');
-            const allFolders = foldersData.filter(f => f.id !== '_TICKER_SETTINGS_'); 
+        // --- FUNCIÓN RECURSIVA PARA EL ÁRBOL DE CARPETAS ---
+        function renderAdminFolderTree(parentId = null, level = 0) {
+            let html = '';
+            const children = foldersData.filter(f => (f.parentId || null) === parentId && f.id !== '_TICKER_SETTINGS_');
             
-            if (allFolders.length === 0) {
-                content.innerHTML = `<div class="empty-state" style="text-align:center; padding:2rem; color:var(--gray-500);"><h3>No hay carpetas creadas</h3></div>`; return;
-            }
-            
-            let html = `<div class="folders-grid">`;
-            allFolders.forEach(f => {
-                const assignedUser = usersData.find(u => u.id === f.userId);
-                const parentFolder = f.parentId ? foldersData.find(p => p.id === f.parentId) : null;
-                const badgeHtml = parentFolder 
-                    ? `<span style="display:inline-block; font-size:0.7rem; background:var(--gray-200); color:var(--gray-700); padding:0.2rem 0.5rem; border-radius:4px; margin-top:0.3rem;">↳ Subcarpeta de: ${escapeHtml(parentFolder.name)}</span>`
-                    : `<span style="display:inline-block; font-size:0.7rem; background:rgba(203,53,36,0.1); color:var(--atm-red); padding:0.2rem 0.5rem; border-radius:4px; margin-top:0.3rem;">📁 Carpeta Raíz</span>`;
+            children.sort((a, b) => (a.order || 0) - (b.order || 0));
 
+            children.forEach(f => {
+                const assignedUser = usersData.find(u => u.id === f.userId);
+                const indent = level * 2.5; 
+                const isRoot = level === 0;
+                
                 html += `
-                <div class="folder-card" style="cursor:default; align-items:flex-start;">
-                    <div style="flex:1">
-                        <div class="folder-name" style="color:var(--gray-800); font-size: 1.1rem;">${escapeHtml(f.name)}</div>
-                        ${badgeHtml}
-                        <div style="font-size:0.85rem; color:var(--gray-500); margin-top:0.5rem;">👤 ${assignedUser ? escapeHtml(assignedUser.fullName) : 'Sin asignar'}</div>
+                <div class="admin-folder-row" style="margin-left: ${indent}rem; ${!isRoot ? 'border-left: 3px solid var(--atm-red);' : ''}">
+                    <div class="admin-folder-info">
+                        <div class="folder-icon" style="color: ${isRoot ? 'var(--atm-blue)' : 'var(--gray-400)'}">
+                            <svg viewBox="0 0 24 24" width="${isRoot ? '24' : '20'}" height="${isRoot ? '24' : '20'}" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                        </div>
+                        <div>
+                            <div style="font-weight: ${isRoot ? '600' : '500'}; color: var(--gray-800);">${escapeHtml(f.name)}</div>
+                            <div style="font-size: 0.8rem; color: var(--gray-500); margin-top: 0.2rem;">
+                                👤 ${assignedUser ? escapeHtml(assignedUser.fullName) : 'Sin asignar'}
+                            </div>
+                        </div>
                     </div>
                     <div class="action-buttons">
                         <button class="btn btn-secondary btn-icon-action" onclick="showChangeTrainerModal('${f.id}')" title="Cambiar entrenador">✏️</button>
                         <button class="btn btn-primary btn-icon-action" style="background:var(--atm-red); color:white;" onclick="confirmDelete('${f.id}', 'folder')" title="Eliminar">🗑️</button>
                     </div>
                 </div>`;
+                
+                html += renderAdminFolderTree(f.id, level + 1);
             });
+            return html;
+        }
+
+        function renderFoldersTab() {
+            const content = document.getElementById('adminContent');
+            const hasFolders = foldersData.filter(f => f.id !== '_TICKER_SETTINGS_').length > 0; 
+            
+            if (!hasFolders) {
+                content.innerHTML = `<div class="empty-state" style="text-align:center; padding:2rem; color:var(--gray-500);"><h3>No hay carpetas creadas</h3></div>`; return;
+            }
+            
+            let html = `<div class="admin-folder-tree">`;
+            html += renderAdminFolderTree(null, 0); // Llama al motor recursivo
             html += `</div>`;
+            
             content.innerHTML = html;
         }
 
@@ -1707,22 +1735,6 @@
         }
 
         function editUser(id) { openUserModal(id); }
-
-        function showChangeTrainerModal(id) {
-            document.getElementById('changeTrainerFolderId').value = id;
-            document.getElementById('newTrainerSelect').innerHTML = `<option value="">Sin asignar</option>` + usersData.filter(u=>u.role==='coach').map(u => `<option value="${u.id}">${escapeHtml(u.fullName)}</option>`).join('');
-            openModal('changeTrainerModal');
-        }
-
-        function confirmDelete(id, type) { deletingId = id; deletingType = type; openModal('deleteModal'); }
-        document.getElementById('confirmDeleteBtn').onclick = async () => {
-            try {
-                if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
-                else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
-                else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
-                closeModal('deleteModal'); showToast('Eliminado correctamente', 'success');
-            } catch(e) { showToast('Error al eliminar', 'error'); }
-        };
 
         document.addEventListener('DOMContentLoaded', () => {
             try { initFirebase(); setupAuthListener(); } 
