@@ -151,8 +151,6 @@
         .login-card { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 3rem; width: 100%; max-width: 420px; transition: 0.3s; }
         .login-header { text-align: center; margin-bottom: 2rem; }
         .logo-escudo { width: 120px; height: 120px; border-radius: var(--radius); margin-bottom: 1.5rem; object-fit: contain; background: var(--white); padding: 0.5rem; box-shadow: var(--shadow); animation: floatShield 3s ease-in-out infinite; }
-        .login-header h1 { font-size: 1.75rem; color: var(--atm-blue); margin-bottom: 0.5rem; }
-        .login-header .subtitle { color: var(--gray-500); font-size: 0.95rem; margin: 0; }
         
         .app-container { flex-direction: row; }
         .sidebar { width: 280px; background: var(--atm-blue); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; height: 100dvh; z-index: 100; transition: transform 0.4s ease; }
@@ -675,6 +673,7 @@
         let tickerData = { text: "", active: false };
         let deletingId = null, deletingType = null, editingUserId = null;
         let currentPage = 'dashboard'; 
+        let draggedFolderId = null; // FIX DEFINITIVO DRAG&DROP
         
         let searchQuery = "", activeObjectiveFilter = null; 
         let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
@@ -685,7 +684,7 @@
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
 
-        // ==================== CONTROL DE CARGA (SKELETON CON LÓGICA DE SEMÁFOROS BLINDADA) ====================
+        // ==================== CONTROL DE CARGA Y LECTOR QR (FIX) ====================
         let isAppReady = false;
         let loadedCollections = { users: false, folders: false, sessions: false };
         
@@ -697,6 +696,7 @@
                 const session = sessionsData.find(x => x.id === viewId);
                 if(session) {
                     hasCheckedSharedLink = true;
+                    // Retraso estético para que no atropelle el desvanecimiento del splash
                     setTimeout(() => {
                         const btn = document.getElementById('openSharedSessionBtn');
                         btn.onclick = () => {
@@ -704,10 +704,10 @@
                             window.history.replaceState({}, document.title, window.location.pathname);
                         };
                         openModal('sharedSessionModal');
-                    }, 400); // Respiro visual para que el usuario note la ventana modal
+                    }, 400); 
                 }
             } else {
-                hasCheckedSharedLink = true; // No hay QR
+                hasCheckedSharedLink = true; 
             }
         }
 
@@ -720,10 +720,8 @@
             }
         }
 
-        // Freno de Emergencia (Si el internet es muy lento, a los 6s abre sí o sí)
         function triggerEmergencyStart() {
             if (!isAppReady) {
-                console.warn("Inicio forzado por timeout.");
                 isAppReady = true;
                 setScreen('appPage');
                 showPage('dashboard');
@@ -755,7 +753,7 @@
             return html;
         }
 
-        // ==================== FORMULARIOS GLOBALES A PRUEBA DE FALLOS ====================
+        // ==================== FORMULARIOS GLOBALES ====================
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -1014,7 +1012,7 @@
                                     setScreen('loadingPage');
                                     window.listenersSetup = true;
                                     setupDataListeners();
-                                    setTimeout(triggerEmergencyStart, 6000); // Freno de emergencia a los 6s
+                                    setTimeout(triggerEmergencyStart, 6000); // FRENO EMERGENCIA
                                 } else {
                                     if(isAppReady){
                                         setScreen('appPage');
@@ -1071,7 +1069,7 @@
                 loadedCollections.sessions = true;
                 if (!isAppReady) { checkAppReady(); }
                 else {
-                    processQR(); // Revisar QR si llega la sesión con la app abierta
+                    processQR();
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderStatsTab(); 
                 }
@@ -1098,13 +1096,16 @@
             return false;
         }
 
-        // ==================== DRAG AND DROP ====================
+        // ==================== DRAG AND DROP (OPTIMIZADO) ====================
         function dragStart(e, id) { 
             window.isDragging = true; draggedFolderId = id; 
             e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); 
             setTimeout(() => e.target.style.opacity = '0.5', 0);
         }
-        function dragEnd(e) { e.target.style.opacity = '1'; setTimeout(() => { window.isDragging = false; }, 100); }
+        function dragEnd(e) { 
+            e.target.style.opacity = '1'; 
+            setTimeout(() => { window.isDragging = false; draggedFolderId = null; }, 100); 
+        }
         function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
         function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
         
@@ -1114,7 +1115,11 @@
             if (!draggedFolderId || draggedFolderId === targetId) return;
 
             let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
-            visible.sort((a, b) => (a.order || 0) - (b.order || 0));
+            visible.sort((a, b) => {
+                const orderA = a.order !== undefined ? a.order : 9999;
+                const orderB = b.order !== undefined ? b.order : 9999;
+                return orderA - orderB;
+            });
 
             const fromIdx = visible.findIndex(f => f.id === draggedFolderId);
             const toIdx = visible.findIndex(f => f.id === targetId);
@@ -1124,8 +1129,15 @@
             visible.splice(toIdx, 0, moved);
 
             const batch = db.batch();
-            visible.forEach((f, idx) => { batch.update(db.collection('folders').doc(f.id), { order: idx }); });
-            try { await batch.commit(); showToast('Carpetas ordenadas', 'success'); } catch(err) { showToast('Error al ordenar', 'error'); }
+            visible.forEach((f, idx) => { 
+                batch.update(db.collection('folders').doc(f.id), { order: idx }); 
+                f.order = idx; // Optimista para que no parpadee
+            });
+            try { 
+                await batch.commit(); 
+                showToast('Carpetas ordenadas', 'success'); 
+                renderDashboard(); // Re-pintar inmediato
+            } catch(err) { showToast('Error al ordenar', 'error'); }
         }
 
         // ==================== COMPARTIR WHATSAPP Y QR NATIVO ====================
@@ -1415,7 +1427,11 @@
                 }
 
                 visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
-                visibleFolders.sort((a, b) => (a.order || 0) - (b.order || 0));
+                visibleFolders.sort((a, b) => {
+                    const orderA = a.order !== undefined ? a.order : 9999;
+                    const orderB = b.order !== undefined ? b.order : 9999;
+                    return orderA - orderB;
+                });
                 
                 visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId && (currentFolderId !== null || !myFavorites.includes(s.id)));
             }
