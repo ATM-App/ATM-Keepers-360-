@@ -55,7 +55,6 @@
         .skeleton { background: var(--gray-200); border-radius: var(--radius); animation: pulseSkel 1.5s infinite ease-in-out; }
         body.dark-mode .skeleton { background: var(--gray-700); }
         @keyframes pulseSkel { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        
         @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-entry { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         @keyframes floatShield { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
@@ -618,7 +617,6 @@
         let initialDataCount = 0;
         
         function checkAppReady() {
-            // AHORA SOLO ESPERAMOS 3 (Usuarios, Carpetas, Sesiones)
             if (!isAppReady && initialDataCount >= 3) {
                 isAppReady = true;
                 setScreen('appPage'); 
@@ -643,7 +641,7 @@
             }
         }
 
-        // ==================== FUNCIONES PUENTE RECUPERADAS (FIX DEFINITIVO) ====================
+        // ==================== FUNCIONES PUENTE ====================
         function openFolderModal() {
             document.getElementById('folderForm').reset();
             document.getElementById('folderParentId').value = currentFolderId || '';
@@ -1205,7 +1203,7 @@
             let currentObj = s.objective || (s.tags && s.tags[0]); 
             if (currentObj) {
                 objectiveHtml = `
-                <div class="objective-badge" onclick="toggleObjectiveFilter('${escapeHtml(currentObj)}', event)" style="cursor:pointer; ${activeObjectiveFilter===currentObj ? 'background:var(--atm-red); color:white;' : ''}">
+                <div class="objective-badge" onclick="toggleObjectiveFilter('${escapeHtml(currentObj)}', event)">
                     🎯 Objetivo: <strong>${escapeHtml(currentObj)}</strong>
                 </div>`;
             }
@@ -1257,7 +1255,6 @@
             let visibleFolders = [];
             let visibleSessions = [];
 
-            // Extraer los 5 objetivos más usados para los Smart Chips
             const objCounts = {};
             sessionsData.forEach(s => {
                 let obj = s.objective || (s.tags && s.tags[0]);
@@ -1290,7 +1287,6 @@
                 }
                 html += `</div>`;
 
-                // 🔍 SMART CHIPS DE OBJETIVOS
                 if (currentFolderId === null && topObjs.length > 0) {
                     html += `<div class="smart-chips">`;
                     topObjs.forEach(obj => {
@@ -1362,7 +1358,7 @@
             container.innerHTML = html;
         }
 
-        // ==================== FORMULARIOS DE SUBIDA ====================
+        // ==================== FORMULARIOS DE SUBIDA (NUEVO SISTEMA OBJETIVOS) ====================
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
             
@@ -1473,13 +1469,13 @@
             document.getElementById('fileInfo').style.display = 'none';
         }
 
-        // ==================== ADMIN ====================
+        // ==================== ADMIN (SIN PESTAÑA ETIQUETAS) ====================
         function renderAdmin() {
             const container = document.getElementById('contentArea');
             container.innerHTML = `
                 <div class="admin-tabs animate-entry">
                     <button class="admin-tab active" onclick="switchAdminTab(event, 'users')">👥 Usuarios</button>
-                    <button class="admin-tab" onclick="switchAdminTab(event, 'folders')">📁 Carpetas Raíz</button>
+                    <button class="admin-tab" onclick="switchAdminTab(event, 'folders')">📁 Carpetas</button>
                     <button class="admin-tab" onclick="switchAdminTab(event, 'stats')">📊 Métricas</button>
                     <button class="admin-tab" onclick="switchAdminTab(event, 'ticker')">📢 Anuncios</button>
                 </div>
@@ -1558,22 +1554,29 @@
             content.innerHTML = html;
         }
 
+        // ==================== RENDER FOLDERS TAB MODIFICADO (TODAS LAS CARPETAS) ====================
         function renderFoldersTab() {
             const content = document.getElementById('adminContent');
-            const rootFolders = foldersData.filter(f => !f.parentId && f.id !== '_TICKER_SETTINGS_'); 
+            const allFolders = foldersData.filter(f => f.id !== '_TICKER_SETTINGS_'); 
             
-            if (rootFolders.length === 0) {
-                content.innerHTML = `<div class="empty-state"><h3>No hay carpetas principales</h3></div>`; return;
+            if (allFolders.length === 0) {
+                content.innerHTML = `<div class="empty-state" style="text-align:center; padding:2rem; color:var(--gray-500);"><h3>No hay carpetas creadas</h3></div>`; return;
             }
             
             let html = `<div class="folders-grid">`;
-            rootFolders.forEach(f => {
+            allFolders.forEach(f => {
                 const assignedUser = usersData.find(u => u.id === f.userId);
+                const parentFolder = f.parentId ? foldersData.find(p => p.id === f.parentId) : null;
+                const badgeHtml = parentFolder 
+                    ? `<span style="display:inline-block; font-size:0.7rem; background:var(--gray-200); color:var(--gray-700); padding:0.2rem 0.5rem; border-radius:4px; margin-top:0.3rem;">↳ Subcarpeta de: ${escapeHtml(parentFolder.name)}</span>`
+                    : `<span style="display:inline-block; font-size:0.7rem; background:rgba(203,53,36,0.1); color:var(--atm-red); padding:0.2rem 0.5rem; border-radius:4px; margin-top:0.3rem;">📁 Carpeta Raíz</span>`;
+
                 html += `
-                <div class="folder-card" style="cursor:default;">
+                <div class="folder-card" style="cursor:default; align-items:flex-start;">
                     <div style="flex:1">
-                        <div class="folder-name" style="color:var(--gray-800);">${escapeHtml(f.name)}</div>
-                        <div style="font-size:0.85rem; color:var(--gray-500); margin-top:0.25rem;">${assignedUser ? escapeHtml(assignedUser.fullName) : 'Sin asignar'}</div>
+                        <div class="folder-name" style="color:var(--gray-800); font-size: 1.1rem;">${escapeHtml(f.name)}</div>
+                        ${badgeHtml}
+                        <div style="font-size:0.85rem; color:var(--gray-500); margin-top:0.5rem;">👤 ${assignedUser ? escapeHtml(assignedUser.fullName) : 'Sin asignar'}</div>
                     </div>
                     <div class="action-buttons">
                         <button class="btn btn-secondary btn-icon-action" onclick="showChangeTrainerModal('${f.id}')" title="Cambiar entrenador">✏️</button>
@@ -1649,6 +1652,7 @@
             });
         }
 
+        // --- FOTO PERFIL ---
         function handleProfileImage(event) {
             const input = event.target;
             if (input.files && input.files[0]) {
