@@ -151,6 +151,8 @@
         .login-card { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 3rem; width: 100%; max-width: 420px; transition: 0.3s; }
         .login-header { text-align: center; margin-bottom: 2rem; }
         .logo-escudo { width: 120px; height: 120px; border-radius: var(--radius); margin-bottom: 1.5rem; object-fit: contain; background: var(--white); padding: 0.5rem; box-shadow: var(--shadow); animation: floatShield 3s ease-in-out infinite; }
+        .login-header h1 { font-size: 1.75rem; color: var(--atm-blue); margin-bottom: 0.5rem; }
+        .login-header .subtitle { color: var(--gray-500); font-size: 0.95rem; margin: 0; }
         
         .app-container { flex-direction: row; }
         .sidebar { width: 280px; background: var(--atm-blue); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; height: 100dvh; z-index: 100; transition: transform 0.4s ease; }
@@ -688,11 +690,12 @@
         let initialDataCount = 0;
         
         function checkAppReady() {
-            if (!isAppReady && initialDataCount >= 3) {
+            if (!isAppReady && initialDataCount >= 4) { // Aseguramos que lleguen las 4 colecciones
                 isAppReady = true;
                 setScreen('appPage'); 
                 showPage('dashboard');
                 
+                // Comprobamos el link QR con la app ya totalmente pintada en pantalla
                 if (!hasCheckedSharedLink) {
                     hasCheckedSharedLink = true;
                     const params = new URLSearchParams(window.location.search);
@@ -700,12 +703,14 @@
                     if (viewId) {
                         const session = sessionsData.find(x => x.id === viewId);
                         if(session) {
-                            const btn = document.getElementById('openSharedSessionBtn');
-                            btn.onclick = () => {
-                                closeModal('sharedSessionModal'); viewFile(viewId);
-                                window.history.replaceState({}, document.title, window.location.pathname);
-                            };
-                            openModal('sharedSessionModal');
+                            setTimeout(() => {
+                                const btn = document.getElementById('openSharedSessionBtn');
+                                btn.onclick = () => {
+                                    closeModal('sharedSessionModal'); viewFile(viewId);
+                                    window.history.replaceState({}, document.title, window.location.pathname);
+                                };
+                                openModal('sharedSessionModal');
+                            }, 300); // Pequeño respiro visual para el usuario
                         }
                     }
                 }
@@ -1050,6 +1055,15 @@
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderStatsTab(); 
                 }
             }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
+            
+            db.collection('tags').onSnapshot(s => {
+                tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
+                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                else {
+                    if(currentPage === 'upload') renderUpload();
+                    else if(currentPage === 'dashboard') renderDashboard();
+                }
+            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
         }
 
         function updateTickerUI() {
@@ -1358,7 +1372,6 @@
                 }
                 html += `</div>`;
 
-                // 🔍 SMART CHIPS DE OBJETIVOS
                 if (currentFolderId === null && topObjs.length > 0) {
                     html += `<div class="smart-chips">`;
                     topObjs.forEach(obj => {
@@ -1430,7 +1443,7 @@
             container.innerHTML = html;
         }
 
-        // ==================== FORMULARIOS DE SUBIDA (NUEVO SISTEMA OBJETIVOS) ====================
+        // ==================== FORMULARIOS DE SUBIDA ====================
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
             
@@ -1541,7 +1554,7 @@
             document.getElementById('fileInfo').style.display = 'none';
         }
 
-        // ==================== ADMIN ====================
+        // ==================== ADMIN (SIN PESTAÑA ETIQUETAS) ====================
         function renderAdmin() {
             const container = document.getElementById('contentArea');
             container.innerHTML = `
