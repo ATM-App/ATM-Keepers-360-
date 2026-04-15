@@ -685,35 +685,49 @@
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
 
-        // ==================== CONTROL DE CARGA (SKELETON) ====================
+        // ==================== CONTROL DE CARGA (SKELETON CON LÓGICA DE SEMÁFOROS BLINDADA) ====================
         let isAppReady = false;
-        let initialDataCount = 0;
+        let loadedCollections = { users: false, folders: false, sessions: false };
         
+        function processQR() {
+            if (hasCheckedSharedLink) return;
+            const params = new URLSearchParams(window.location.search);
+            const viewId = params.get('view');
+            if (viewId) {
+                const session = sessionsData.find(x => x.id === viewId);
+                if(session) {
+                    hasCheckedSharedLink = true;
+                    setTimeout(() => {
+                        const btn = document.getElementById('openSharedSessionBtn');
+                        btn.onclick = () => {
+                            closeModal('sharedSessionModal'); viewFile(viewId);
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        };
+                        openModal('sharedSessionModal');
+                    }, 400); // Respiro visual para que el usuario note la ventana modal
+                }
+            } else {
+                hasCheckedSharedLink = true; // No hay QR
+            }
+        }
+
         function checkAppReady() {
-            if (!isAppReady && initialDataCount >= 4) { // Aseguramos que lleguen las 4 colecciones
+            if (!isAppReady && loadedCollections.users && loadedCollections.folders && loadedCollections.sessions) {
                 isAppReady = true;
                 setScreen('appPage'); 
                 showPage('dashboard');
-                
-                // Comprobamos el link QR con la app ya totalmente pintada en pantalla
-                if (!hasCheckedSharedLink) {
-                    hasCheckedSharedLink = true;
-                    const params = new URLSearchParams(window.location.search);
-                    const viewId = params.get('view');
-                    if (viewId) {
-                        const session = sessionsData.find(x => x.id === viewId);
-                        if(session) {
-                            setTimeout(() => {
-                                const btn = document.getElementById('openSharedSessionBtn');
-                                btn.onclick = () => {
-                                    closeModal('sharedSessionModal'); viewFile(viewId);
-                                    window.history.replaceState({}, document.title, window.location.pathname);
-                                };
-                                openModal('sharedSessionModal');
-                            }, 300); // Pequeño respiro visual para el usuario
-                        }
-                    }
-                }
+                processQR();
+            }
+        }
+
+        // Freno de Emergencia (Si el internet es muy lento, a los 6s abre sí o sí)
+        function triggerEmergencyStart() {
+            if (!isAppReady) {
+                console.warn("Inicio forzado por timeout.");
+                isAppReady = true;
+                setScreen('appPage');
+                showPage('dashboard');
+                processQR();
             }
         }
 
@@ -1000,9 +1014,12 @@
                                     setScreen('loadingPage');
                                     window.listenersSetup = true;
                                     setupDataListeners();
+                                    setTimeout(triggerEmergencyStart, 6000); // Freno de emergencia a los 6s
                                 } else {
-                                    setScreen('appPage');
-                                    showPage('dashboard');
+                                    if(isAppReady){
+                                        setScreen('appPage');
+                                        showPage(currentPage);
+                                    }
                                 }
                             } else {
                                 auth.signOut(); showToast('Usuario no registrado', 'error'); setScreen('loginPage');
@@ -1019,12 +1036,13 @@
         function setupDataListeners() {
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
-                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                loadedCollections.users = true;
+                if (!isAppReady) { checkAppReady(); }
                 else {
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin') renderAdmin();
                 }
-            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
+            }, err => { loadedCollections.users = true; if (!isAppReady) { checkAppReady(); } });
             
             db.collection('folders').onSnapshot(s => { 
                 foldersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
@@ -1034,7 +1052,8 @@
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                loadedCollections.folders = true;
+                if (!isAppReady) { checkAppReady(); }
                 else {
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(2)')?.classList.contains('active')) renderFoldersTab();
@@ -1044,26 +1063,19 @@
                         renderTickerTab();
                     }
                 }
-            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
+            }, err => { loadedCollections.folders = true; if (!isAppReady) { checkAppReady(); } });
 
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
-                if (!isAppReady) { initialDataCount++; checkAppReady(); }
+                loadedCollections.sessions = true;
+                if (!isAppReady) { checkAppReady(); }
                 else {
+                    processQR(); // Revisar QR si llega la sesión con la app abierta
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderStatsTab(); 
                 }
-            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
-            
-            db.collection('tags').onSnapshot(s => {
-                tagsData = s.docs.map(d => ({id:d.id, ...d.data()}));
-                if (!isAppReady) { initialDataCount++; checkAppReady(); }
-                else {
-                    if(currentPage === 'upload') renderUpload();
-                    else if(currentPage === 'dashboard') renderDashboard();
-                }
-            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
+            }, err => { loadedCollections.sessions = true; if (!isAppReady) { checkAppReady(); } });
         }
 
         function updateTickerUI() {
@@ -1554,7 +1566,7 @@
             document.getElementById('fileInfo').style.display = 'none';
         }
 
-        // ==================== ADMIN (SIN PESTAÑA ETIQUETAS) ====================
+        // ==================== ADMIN ====================
         function renderAdmin() {
             const container = document.getElementById('contentArea');
             container.innerHTML = `
