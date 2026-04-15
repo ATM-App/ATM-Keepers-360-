@@ -336,7 +336,7 @@
                 <h1>ATM Keepers 360</h1>
                 <p class="subtitle">Plataforma de Entrenadores de Porteros</p>
             </div>
-            <form id="loginForm">
+            <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
                     <label>Email</label>
                     <input type="email" id="loginEmail" placeholder="usuario@email.com" required>
@@ -500,7 +500,7 @@
                 <h3 id="folderModalTitle">Nueva Carpeta</h3>
                 <button class="modal-close" onclick="closeModal('folderModal')">✕</button>
             </div>
-            <form id="folderForm" style="padding: 1.5rem;">
+            <form id="folderForm" style="padding: 1.5rem;" onsubmit="handleFolderSubmit(event)">
                 <input type="hidden" id="folderParentId">
                 <div class="form-group">
                     <label>Nombre de la Carpeta</label>
@@ -525,7 +525,7 @@
                 <h3 id="userModalTitle">Usuario</h3>
                 <button class="modal-close" onclick="closeModal('userModal')">✕</button>
             </div>
-            <form id="userForm" style="padding: 1.5rem;">
+            <form id="userForm" style="padding: 1.5rem;" onsubmit="handleUserSubmit(event)">
                 <input type="hidden" id="userId">
                 <div class="form-group">
                     <label>Foto de Perfil</label>
@@ -571,7 +571,7 @@
                 <h3>Cambiar Entrenador</h3>
                 <button class="modal-close" onclick="closeModal('changeTrainerModal')">✕</button>
             </div>
-            <form id="changeTrainerForm" style="padding: 1.5rem;">
+            <form id="changeTrainerForm" style="padding: 1.5rem;" onsubmit="handleChangeTrainerSubmit(event)">
                 <input type="hidden" id="changeTrainerFolderId">
                 <div class="form-group">
                     <label>Seleccionar Nuevo Entrenador</label>
@@ -603,31 +603,6 @@
     <script src="firebase-config.js"></script>
     
     <script>
-        // ==================== INICIALIZACIÓN GLOBAL ABSOLUTA ====================
-        let db, auth;
-        function initFirebase() { 
-            db = firebase.firestore(); 
-            auth = firebase.auth(); 
-        }
-        window.initfirebase = initFirebase; // Fallback por si hay minúsculas en el config
-        window.initFirebase = initFirebase;
-
-        // ==================== FUNCIÓN GLOBAL PARA ETIQUETAS ====================
-        window.handleAddTag = async function(e) {
-            e.preventDefault();
-            const name = document.getElementById('newTagName').value.trim();
-            const color = document.getElementById('newTagColor').value;
-            if(name) {
-                try {
-                    await db.collection('tags').add({ name, color });
-                    showToast('Etiqueta añadida', 'success');
-                    document.getElementById('newTagName').value = '';
-                } catch(error) {
-                    showToast('Error al añadir: ' + error.message, 'error');
-                }
-            }
-        };
-
         // ==================== VARIABLES GLOBALES ====================
         window.isDragging = false; 
         let currentUser = null, currentUserData = null, currentFolderId = null;
@@ -641,6 +616,7 @@
         let myFavorites = JSON.parse(localStorage.getItem('atm_favorites')) || []; 
         let hasCheckedSharedLink = false; 
         
+        let db, auth;
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
 
@@ -669,6 +645,102 @@
                             openModal('sharedSessionModal');
                         }
                     }
+                }
+            }
+        }
+
+        // ==================== FORMULARIOS GLOBALES A PRUEBA DE FALLOS ====================
+        async function handleLogin(e) {
+            e.preventDefault();
+            const btn = document.getElementById('loginBtn');
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            btn.disabled = true; btn.textContent = 'Procesando...'; document.getElementById('errorMessage').style.display = 'none';
+
+            try {
+                setScreen('loadingPage');
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                setScreen('loginPage');
+                document.getElementById('errorMessage').style.display = 'block'; 
+                document.getElementById('errorMessage').textContent = 'Email o contraseña incorrectos.';
+            } finally {
+                btn.disabled = false; btn.textContent = 'Iniciar Sesión';
+            }
+        }
+
+        async function handleFolderSubmit(e) {
+            e.preventDefault();
+            const parentId = document.getElementById('folderParentId').value || null;
+            const userId = parentId ? null : (document.getElementById('folderUserGroup').style.display === 'block' ? document.getElementById('folderUser').value : currentUser.uid);
+            
+            const sibs = foldersData.filter(f => f.parentId === parentId && f.id !== '_TICKER_SETTINGS_');
+            try {
+                await db.collection('folders').add({
+                    name: document.getElementById('folderName').value, parentId, userId: userId || null, order: sibs.length, createdAt: new Date().toISOString()
+                });
+                showToast('Carpeta creada', 'success'); closeModal('folderModal');
+            } catch(err) {
+                showToast('Error al crear carpeta: ' + err.message, 'error');
+            }
+        }
+
+        async function handleUserSubmit(e) {
+            e.preventDefault();
+            const btn = document.getElementById('saveUserBtn'); btn.disabled = true;
+            const email = document.getElementById('userEmail').value;
+            const pass = document.getElementById('userPassword').value;
+            
+            const data = { 
+                fullName: document.getElementById('userFullName').value, 
+                username: document.getElementById('userUsername').value, 
+                role: document.getElementById('userRole').value, 
+                profileImage: document.getElementById('profileImageData').value || null 
+            };
+            
+            try {
+                if (editingUserId) {
+                    const np = document.getElementById('userNewPassword').value; 
+                    if (np) { data.tempPassword = np; data.passwordResetRequired = true; }
+                    await db.collection('users').doc(editingUserId).update(data); 
+                    showToast('Usuario actualizado', 'success');
+                } else {
+                    const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
+                    const secAuth = firebase.auth(secondaryApp);
+                    const cred = await secAuth.createUserWithEmailAndPassword(email, pass);
+                    
+                    data.email = email; data.active = true; data.createdAt = new Date().toISOString();
+                    
+                    await db.collection('users').doc(cred.user.uid).set(data);
+                    await secAuth.signOut(); secondaryApp.delete();
+                    showToast('Usuario creado', 'success');
+                }
+                closeModal('userModal');
+            } catch(err) { showToast('Error: ' + err.message, 'error'); } 
+            finally { btn.disabled = false; }
+        }
+
+        async function handleChangeTrainerSubmit(e) {
+            e.preventDefault();
+            try {
+                await db.collection('folders').doc(document.getElementById('changeTrainerFolderId').value).update({ userId: document.getElementById('newTrainerSelect').value || null });
+                showToast('Entrenador actualizado', 'success'); closeModal('changeTrainerModal');
+            } catch(err) {
+                showToast('Error al actualizar entrenador', 'error');
+            }
+        }
+
+        async function handleAddTag(e) {
+            e.preventDefault();
+            const name = document.getElementById('newTagName').value.trim();
+            const color = document.getElementById('newTagColor').value;
+            if(name) {
+                try {
+                    await db.collection('tags').add({ name, color });
+                    showToast('Etiqueta añadida', 'success');
+                    document.getElementById('newTagName').value = '';
+                } catch(error) {
+                    showToast('Error al añadir: ' + error.message, 'error');
                 }
             }
         }
@@ -738,6 +810,8 @@
                 pStartY = 0; pCurrentY = 0;
             });
         });
+
+        function initFirebase() { db = firebase.firestore(); auth = firebase.auth(); }
 
         // ==================== SCROLL, OSCURO Y PIZARRA ====================
         function toggleDarkMode() {
@@ -846,7 +920,7 @@
                                 renderSidebar(); 
                                 
                                 if (!window.listenersSetup) {
-                                    setScreen('loadingPage'); 
+                                    setScreen('loadingPage');
                                     window.listenersSetup = true;
                                     setupDataListeners();
                                 } else {
@@ -864,25 +938,6 @@
             });
         }
 
-        document.getElementById('loginForm').onsubmit = async e => {
-            e.preventDefault();
-            const btn = document.getElementById('loginBtn');
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            btn.disabled = true; btn.textContent = 'Procesando...'; document.getElementById('errorMessage').style.display = 'none';
-
-            try {
-                setScreen('loadingPage'); 
-                await auth.signInWithEmailAndPassword(email, password);
-            } catch (error) {
-                setScreen('loginPage');
-                document.getElementById('errorMessage').style.display = 'block'; 
-                document.getElementById('errorMessage').textContent = 'Email o contraseña incorrectos.';
-            } finally {
-                btn.disabled = false; btn.textContent = 'Iniciar Sesión';
-            }
-        };
-
         // ==================== DATA LISTENERS & TICKER ====================
         function setupDataListeners() {
             db.collection('users').onSnapshot(s => { 
@@ -892,7 +947,7 @@
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin') renderAdmin();
                 }
-            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } }); 
+            }, err => { if (!isAppReady) { initialDataCount++; checkAppReady(); } });
             
             db.collection('folders').onSnapshot(s => { 
                 foldersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
@@ -1053,7 +1108,7 @@
             }
         }
 
-        // ==================== VISTAS ====================
+        // ==================== FAVORITOS, BUSCADOR Y VISTAS ====================
         function toggleFavorite(id, event) {
             if (event) event.stopPropagation();
             if (myFavorites.includes(id)) {
@@ -1308,18 +1363,6 @@
             openModal('folderModal');
         }
 
-        document.getElementById('folderForm').onsubmit = async e => {
-            e.preventDefault();
-            const parentId = document.getElementById('folderParentId').value || null;
-            const userId = parentId ? null : (document.getElementById('folderUserGroup').style.display === 'block' ? document.getElementById('folderUser').value : currentUser.uid);
-            
-            const sibs = foldersData.filter(f => f.parentId === parentId && f.id !== '_TICKER_SETTINGS_');
-            await db.collection('folders').add({
-                name: document.getElementById('folderName').value, parentId, userId: userId || null, order: sibs.length, createdAt: new Date().toISOString()
-            });
-            showToast('Carpeta creada', 'success'); closeModal('folderModal');
-        };
-
         function getFolderOptionsHtml(folders, parentId = null, level = 0) {
             let html = '';
             folders.filter(f => (f.parentId || null) === parentId && f.id !== '_TICKER_SETTINGS_').forEach(f => {
@@ -1558,7 +1601,7 @@
             const content = document.getElementById('adminContent');
             let html = `
             <div style="background:var(--white); padding:1.5rem; border-radius:var(--radius-lg); box-shadow:var(--shadow); margin-bottom:1.5rem;">
-                <form id="addTagForm" onsubmit="window.handleAddTag(event)" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
+                <form id="addTagForm" onsubmit="handleAddTag(event)" style="display:flex; gap:1rem; align-items:flex-end; flex-wrap:wrap;">
                     <div style="flex:1; min-width:200px;">
                         <label style="display:block; margin-bottom:0.5rem; font-weight:500; font-size:0.9rem; color:var(--gray-700);">Nombre de Etiqueta</label>
                         <input type="text" id="newTagName" required style="width:100%; padding:0.75rem; border:1px solid var(--gray-200); border-radius:var(--radius); background:var(--gray-50); color:var(--gray-800);">
@@ -1648,119 +1691,6 @@
                 options: { responsive: true, maintainAspectRatio: false, scales: { y: { ticks:{ color: textColor } }, x: { ticks:{ color: textColor } } }, plugins: { legend: { display: false } } }
             });
         }
-
-        function handleProfileImage(event) {
-            const input = event.target;
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const base64 = e.target.result;
-                    document.getElementById('profileImageData').value = base64;
-                    document.getElementById('profileImagePreview').innerHTML = `<img src="${base64}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--atm-red);"> <button type="button" class="btn btn-secondary" style="margin-top:0.5rem; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="removeProfileImage()">Quitar</button>`;
-                };
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-        function removeProfileImage() {
-            document.getElementById('profileImageInput').value = ''; document.getElementById('profileImageData').value = '';
-            document.getElementById('profileImagePreview').innerHTML = `<div class="user-avatar" style="width:80px;height:80px;font-size:2rem;background:var(--gray-300);">?</div>`;
-        }
-
-        async function toggleUserActive(id) {
-            const user = usersData.find(u => u.id === id);
-            await db.collection('users').doc(id).update({ active: !user.active });
-        }
-
-        async function changePassword(id) {
-            const user = usersData.find(u => u.id === id);
-            const newPass = prompt(`Nueva contraseña para ${user.fullName} (Mínimo 6 caracteres):`);
-            if (newPass && newPass.length >= 6) {
-                await db.collection('users').doc(id).update({ tempPassword: newPass, passwordResetRequired: true });
-                showToast('Cambio de contraseña registrado', 'success');
-            } else if (newPass) { showToast('Mínimo 6 caracteres', 'error'); }
-        }
-
-        function openUserModal(id = null) {
-            editingUserId = id; document.getElementById('userForm').reset(); document.getElementById('userId').value = id || '';
-            const passGrp = document.getElementById('passwordGroup'), editGrp = document.getElementById('editPasswordGroup');
-            removeProfileImage(); 
-            
-            if (id) {
-                const u = usersData.find(x => x.id === id);
-                document.getElementById('userEmail').value = u.email; document.getElementById('userEmail').disabled = true;
-                document.getElementById('userUsername').value = u.username || '';
-                document.getElementById('userFullName').value = u.fullName; document.getElementById('userRole').value = u.role;
-                if(u.profileImage) {
-                    document.getElementById('profileImageData').value = u.profileImage;
-                    document.getElementById('profileImagePreview').innerHTML = `<img src="${u.profileImage}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:3px solid var(--atm-red);"> <button type="button" class="btn btn-secondary" style="margin-top:0.5rem; padding: 0.2rem 0.5rem; font-size: 0.8rem;" onclick="removeProfileImage()">Quitar</button>`;
-                }
-                passGrp.style.display = 'none'; document.getElementById('userPassword').required = false; editGrp.style.display = 'block';
-            } else {
-                document.getElementById('userEmail').disabled = false; passGrp.style.display = 'block';
-                document.getElementById('userPassword').required = true; editGrp.style.display = 'none';
-            }
-            openModal('userModal');
-        }
-
-        function editUser(id) { openUserModal(id); }
-
-        document.getElementById('userForm').onsubmit = async e => {
-            e.preventDefault();
-            const btn = document.getElementById('saveUserBtn'); btn.disabled = true;
-            const email = document.getElementById('userEmail').value;
-            const pass = document.getElementById('userPassword').value;
-            
-            const data = { 
-                fullName: document.getElementById('userFullName').value, 
-                username: document.getElementById('userUsername').value, 
-                role: document.getElementById('userRole').value, 
-                profileImage: document.getElementById('profileImageData').value || null 
-            };
-            
-            try {
-                if (editingUserId) {
-                    const np = document.getElementById('userNewPassword').value; 
-                    if (np) { data.tempPassword = np; data.passwordResetRequired = true; }
-                    await db.collection('users').doc(editingUserId).update(data); 
-                    showToast('Usuario actualizado', 'success');
-                } else {
-                    const secondaryApp = firebase.initializeApp(firebaseConfig, 'Secondary_' + Date.now());
-                    const secAuth = firebase.auth(secondaryApp);
-                    const cred = await secAuth.createUserWithEmailAndPassword(email, pass);
-                    
-                    data.email = email; data.active = true; data.createdAt = new Date().toISOString();
-                    
-                    await db.collection('users').doc(cred.user.uid).set(data);
-                    await secAuth.signOut(); secondaryApp.delete();
-                    showToast('Usuario creado', 'success');
-                }
-                closeModal('userModal');
-            } catch(err) { showToast('Error: ' + err.message, 'error'); } 
-            finally { btn.disabled = false; }
-        };
-
-        function showChangeTrainerModal(id) {
-            document.getElementById('changeTrainerFolderId').value = id;
-            document.getElementById('newTrainerSelect').innerHTML = `<option value="">Sin asignar</option>` + usersData.filter(u=>u.role==='coach').map(u => `<option value="${u.id}">${escapeHtml(u.fullName)}</option>`).join('');
-            openModal('changeTrainerModal');
-        }
-
-        document.getElementById('changeTrainerForm').onsubmit = async e => {
-            e.preventDefault();
-            await db.collection('folders').doc(document.getElementById('changeTrainerFolderId').value).update({ userId: document.getElementById('newTrainerSelect').value || null });
-            showToast('Entrenador actualizado', 'success'); closeModal('changeTrainerModal');
-        };
-
-        function confirmDelete(id, type) { deletingId = id; deletingType = type; openModal('deleteModal'); }
-        document.getElementById('confirmDeleteBtn').onclick = async () => {
-            try {
-                if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
-                else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
-                else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
-                else if (deletingType === 'tag') await db.collection('tags').doc(deletingId).delete();
-                closeModal('deleteModal'); showToast('Eliminado correctamente', 'success');
-            } catch(e) { showToast('Error al eliminar', 'error'); }
-        };
 
         document.addEventListener('DOMContentLoaded', () => {
             try { initFirebase(); setupAuthListener(); } 
