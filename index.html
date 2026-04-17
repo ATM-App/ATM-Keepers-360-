@@ -99,7 +99,7 @@
 
         /* 🕹️ JOYSTICK DE CAMPO (FAB) */
         .fab-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 1000; display: flex; flex-direction: column-reverse; align-items: center; gap: 0.75rem; }
-        .fab-main { width: 56px; height: 56px; border-radius: 50%; background: var(--atm-red); color: white; border: none; cursor: pointer; box-shadow: var(--shadow-lg); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; }
+        .fab-main { width: 56px; height: 56px; border-radius: 50%; background: var(--atm-red); color: white; border: none; cursor: pointer; box-shadow: var(--shadow-lg); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); display: flex; align-items: center; justify-content: center; z-index: 1001; }
         .fab-main:hover { transform: scale(1.05); background: var(--atm-red-dark); }
         .fab-container.active .fab-main { transform: rotate(45deg); background: var(--atm-blue); }
         .fab-menu { display: flex; flex-direction: column; gap: 0.75rem; opacity: 0; pointer-events: none; transform: translateY(20px); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); align-items: center; }
@@ -176,6 +176,8 @@
         .login-card { background: var(--white); border-radius: var(--radius-xl); box-shadow: var(--shadow-lg); padding: 3rem; width: 100%; max-width: 420px; transition: 0.3s; }
         .login-header { text-align: center; margin-bottom: 2rem; }
         .logo-escudo { width: 120px; height: 120px; border-radius: var(--radius); margin-bottom: 1.5rem; object-fit: contain; background: var(--white); padding: 0.5rem; box-shadow: var(--shadow); animation: floatShield 3s ease-in-out infinite; }
+        .login-header h1 { font-size: 1.75rem; color: var(--atm-blue); margin-bottom: 0.5rem; }
+        .login-header .subtitle { color: var(--gray-500); font-size: 0.95rem; margin: 0; }
         
         .app-container { flex-direction: row; }
         .sidebar { width: 280px; background: var(--atm-blue); color: white; display: flex; flex-direction: column; position: fixed; height: 100vh; height: 100dvh; z-index: 100; transition: transform 0.4s ease; }
@@ -729,13 +731,13 @@
         let db, auth;
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
-        
+
         // Variables Chat
         let chatVisible = false;
         let unreadCount = 0;
         let firstChatLoad = true;
 
-        // ==================== CONTROL DE CARGA Y LECTOR QR ====================
+        // ==================== CONTROL DE CARGA Y LECTOR QR (FIX) ====================
         let isAppReady = false;
         let loadedCollections = { users: false, folders: false, sessions: false };
         
@@ -747,6 +749,7 @@
                 const session = sessionsData.find(x => x.id === viewId);
                 if(session) {
                     hasCheckedSharedLink = true;
+                    // Retraso estético para que no atropelle el desvanecimiento del splash
                     setTimeout(() => {
                         const btn = document.getElementById('openSharedSessionBtn');
                         btn.onclick = () => {
@@ -767,7 +770,7 @@
                 setScreen('appPage'); 
                 showPage('dashboard');
                 processQR();
-                setupChatListener(); // Iniciar Chat
+                setupChatListener();
             }
         }
 
@@ -781,7 +784,7 @@
             }
         }
 
-        // ==================== LÓGICA DEL CHAT ====================
+        // ==================== LÓGICA DEL CHAT INTERNO ====================
         function toggleChat() {
             chatVisible = !chatVisible;
             const win = document.getElementById('chatWindow');
@@ -801,55 +804,61 @@
             const text = input.value.trim();
             if (!text || !currentUserData) return;
 
+            const msg = {
+                id: Date.now().toString() + Math.random().toString(36).substr(2,5),
+                text: text,
+                senderId: currentUser.uid,
+                senderName: currentUserData.fullName,
+                timestamp: new Date().toISOString()
+            };
+
             try {
-                await db.collection('chat').add({
-                    text: text,
-                    senderId: currentUser.uid,
-                    senderName: currentUserData.fullName,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
+                await db.collection('folders').doc('_GLOBAL_CHAT_').set({
+                    messages: firebase.firestore.FieldValue.arrayUnion(msg)
+                }, { merge: true });
                 input.value = '';
-            } catch(err) { showToast('Error al enviar mensaje', 'error'); }
+            } catch(err) { showToast('Error al enviar', 'error'); }
         }
 
         function setupChatListener() {
-            db.collection('chat')
-              .orderBy('timestamp', 'asc')
-              .limitToLast(50)
-              .onSnapshot(s => {
-                const msgs = s.docs.map(d => d.data());
-                renderMessages(msgs);
+            db.collection('folders').doc('_GLOBAL_CHAT_').onSnapshot(doc => {
+                if (!doc.exists) return;
+                const data = doc.data();
+                let msgs = data.messages || [];
                 
-                if (!firstChatLoad && s.docChanges().length > 0) {
-                    s.docChanges().forEach(change => {
-                        if (change.type === 'added' && change.doc.data().senderId !== currentUser.uid) {
-                            if (!chatVisible) {
-                                unreadCount++;
-                                document.getElementById('chatBadge').textContent = unreadCount;
-                                document.getElementById('chatBadge').style.display = 'flex';
-                                showToast(`💬 Mensaje de ${change.doc.data().senderName}`, 'info');
-                            }
+                if (msgs.length > 50) msgs = msgs.slice(msgs.length - 50);
+
+                const container = document.getElementById('chatMessages');
+                container.innerHTML = msgs.map(m => {
+                    const isMine = m.senderId === currentUser.uid;
+                    const dateObj = new Date(m.timestamp);
+                    const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    return `
+                        <div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-others'}">
+                            ${!isMine ? `<div style="font-weight:bold; font-size:0.7rem; margin-bottom:2px;">${escapeHtml(m.senderName)}</div>` : ''}
+                            <div>${escapeHtml(m.text)}</div>
+                            <div class="msg-info"><span>${timeStr}</span></div>
+                        </div>
+                    `;
+                }).join('');
+                if(chatVisible) container.scrollTop = container.scrollHeight;
+
+                if (!firstChatLoad && msgs.length > 0) {
+                    const lastMsg = msgs[msgs.length - 1];
+                    if (lastMsg.senderId !== currentUser.uid && lastMsg.id !== window.lastSeenMsgId) {
+                        window.lastSeenMsgId = lastMsg.id;
+                        if (!chatVisible) {
+                            unreadCount++;
+                            document.getElementById('chatBadge').textContent = unreadCount;
+                            document.getElementById('chatBadge').style.display = 'flex';
+                            showToast(`💬 Mensaje de ${lastMsg.senderName}`, 'info');
                         }
-                    });
+                    }
+                } else if(msgs.length > 0) {
+                    window.lastSeenMsgId = msgs[msgs.length - 1].id;
                 }
                 firstChatLoad = false;
             });
-        }
-
-        function renderMessages(msgs) {
-            const container = document.getElementById('chatMessages');
-            container.innerHTML = msgs.map(m => {
-                const isMine = m.senderId === currentUser.uid;
-                const time = m.timestamp ? m.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
-                return `
-                    <div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-others'}">
-                        ${!isMine ? `<div style="font-weight:bold; font-size:0.7rem; margin-bottom:2px;">${escapeHtml(m.senderName)}</div>` : ''}
-                        <div>${escapeHtml(m.text)}</div>
-                        <div class="msg-info"><span>${time}</span></div>
-                    </div>
-                `;
-            }).join('');
-            if (chatVisible) container.scrollTop = container.scrollHeight;
         }
 
         // ==================== FUNCIONES PUENTE ====================
@@ -868,7 +877,7 @@
 
         function getFolderOptionsHtml(folders, parentId = null, level = 0) {
             let html = '';
-            folders.filter(f => (f.parentId || null) === parentId && f.id !== '_TICKER_SETTINGS_').forEach(f => {
+            folders.filter(f => (f.parentId || null) === parentId).forEach(f => {
                 const indent = '&nbsp;'.repeat(level * 4) + (level > 0 ? '└ ' : '');
                 html += `<option value="${f.id}">${indent}${escapeHtml(f.name)}</option>`;
                 html += getFolderOptionsHtml(folders, f.id, level + 1);
@@ -901,7 +910,7 @@
             const parentId = document.getElementById('folderParentId').value || null;
             const userId = parentId ? null : (document.getElementById('folderUserGroup').style.display === 'block' ? document.getElementById('folderUser').value : currentUser.uid);
             
-            const sibs = foldersData.filter(f => f.parentId === parentId && f.id !== '_TICKER_SETTINGS_');
+            const sibs = foldersData.filter(f => f.parentId === parentId);
             try {
                 await db.collection('folders').add({
                     name: document.getElementById('folderName').value, parentId, userId: userId || null, order: sibs.length, createdAt: new Date().toISOString()
@@ -1095,7 +1104,7 @@
 
             if(type === 'success') icon.innerHTML = '✅';
             else if(type === 'error') icon.innerHTML = '⚠️';
-            else icon.innerHTML = 'ℹ️';
+            else if(type === 'info') icon.innerHTML = 'ℹ️';
 
             clearTimeout(islandTimeout);
             islandTimeout = setTimeout(() => { island.classList.remove('show'); }, 4000);
@@ -1166,12 +1175,15 @@
             }, err => { loadedCollections.users = true; if (!isAppReady) { checkAppReady(); } });
             
             db.collection('folders').onSnapshot(s => { 
-                foldersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
+                const allFolders = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
-                const tickerDoc = foldersData.find(f => f.id === '_TICKER_SETTINGS_');
+                const tickerDoc = allFolders.find(f => f.id === '_TICKER_SETTINGS_');
                 if (tickerDoc) { tickerData = { text: tickerDoc.text, active: tickerDoc.active }; } 
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
+
+                // FILTRO MAESTRO PARA QUE NO SALGAN CARPETAS DE SISTEMA EN LA APP
+                foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_' && f.id !== '_GLOBAL_CHAT_');
 
                 loadedCollections.folders = true;
                 if (!isAppReady) { checkAppReady(); }
@@ -1237,7 +1249,7 @@
             e.currentTarget.classList.remove('drag-over');
             if (!draggedFolderId || draggedFolderId === targetId) return;
 
-            let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
+            let visible = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
             visible.sort((a, b) => {
                 const orderA = a.order !== undefined ? a.order : 9999;
                 const orderB = b.order !== undefined ? b.order : 9999;
@@ -1502,7 +1514,7 @@
                     <button class="btn btn-secondary" style="padding:0.3rem 0.6rem; font-size:0.8rem; border-color:var(--atm-red); color:var(--atm-red);" onclick="clearFilters()">Limpiar Filtros ✕</button>
                 </div>`;
                 
-                visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_' && (!searchQuery || f.name.toLowerCase().includes(searchQuery)));
+                visibleFolders = foldersData.filter(f => isFolderAllowed(f.id) && (!searchQuery || f.name.toLowerCase().includes(searchQuery)));
                 visibleSessions = sessionsData.filter(s => {
                     if (!isFolderAllowed(s.folderId)) return false;
                     const sessionObj = s.objective || (s.tags && s.tags[0]);
@@ -1549,7 +1561,7 @@
                     }
                 }
 
-                visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
+                visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
                 visibleFolders.sort((a, b) => {
                     const orderA = a.order !== undefined ? a.order : 9999;
                     const orderB = b.order !== undefined ? b.order : 9999;
@@ -1597,7 +1609,7 @@
 
         // ==================== FORMULARIOS DE SUBIDA ====================
         function renderUpload() {
-            const allowed = foldersData.filter(f => isFolderAllowed(f.id) && f.id !== '_TICKER_SETTINGS_');
+            const allowed = foldersData.filter(f => isFolderAllowed(f.id));
             
             const objSet = new Set();
             sessionsData.forEach(s => {
@@ -1791,9 +1803,10 @@
             content.innerHTML = html;
         }
 
+        // --- ÁRBOL RECURSIVO ---
         function renderAdminFolderTree(parentId = null, level = 0) {
             let html = '';
-            const children = foldersData.filter(f => (f.parentId || null) === parentId && f.id !== '_TICKER_SETTINGS_');
+            const children = foldersData.filter(f => (f.parentId || null) === parentId);
             children.sort((a, b) => (a.order || 0) - (b.order || 0));
 
             children.forEach(f => {
@@ -1803,7 +1816,7 @@
                 
                 html += `
                 <div class="admin-folder-row" style="margin-left: ${indent}rem; ${!isRoot ? 'border-left: 3px solid var(--atm-red);' : ''}">
-                    <div style="display:flex; align-items:center; gap:1rem;">
+                    <div class="admin-folder-info">
                         <div class="folder-icon" style="color: ${isRoot ? 'var(--atm-blue)' : 'var(--gray-400)'}">
                             <svg viewBox="0 0 24 24" width="${isRoot ? '24' : '20'}" height="${isRoot ? '24' : '20'}" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                         </div>
@@ -1827,13 +1840,13 @@
 
         function renderFoldersTab() {
             const content = document.getElementById('adminContent');
-            const hasFolders = foldersData.filter(f => f.id !== '_TICKER_SETTINGS_').length > 0; 
+            const hasFolders = foldersData.length > 0; 
             
             if (!hasFolders) {
                 content.innerHTML = `<div class="empty-state" style="text-align:center; padding:2rem; color:var(--gray-500);"><h3>No hay carpetas creadas</h3></div>`; return;
             }
             
-            let html = `<div style="display:flex; flex-direction:column; gap:0.5rem;">`;
+            let html = `<div class="admin-folder-tree">`;
             html += renderAdminFolderTree(null, 0); 
             html += `</div>`;
             
@@ -1853,15 +1866,15 @@
                     </div>
                     <div style="flex:1; min-width:200px; background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow); border-left:4px solid var(--atm-blue);">
                         <h3 style="color:var(--gray-500); font-size:0.9rem;">Total de Carpetas</h3>
-                        <p style="font-size:2rem; font-weight:bold; color:var(--gray-800); margin-top:0.5rem;">${foldersData.filter(f => f.id !== '_TICKER_SETTINGS_').length}</p>
+                        <p style="font-size:2rem; font-weight:bold; color:var(--gray-800); margin-top:0.5rem;">${foldersData.length}</p>
                     </div>
                 </div>
-                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:1.5rem;">
-                    <div style="background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow);">
+                <div class="stats-grid">
+                    <div class="chart-container">
                         <h3 style="margin-bottom:1rem; font-size:1rem; color:var(--gray-700); text-align:center;">Archivos por Entrenador</h3>
                         <canvas id="coachChart" style="max-height: 250px;"></canvas>
                     </div>
-                    <div style="background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow);">
+                    <div class="chart-container">
                         <h3 style="margin-bottom:1rem; font-size:1rem; color:var(--gray-700); text-align:center;">Top Objetivos Principales</h3>
                         <canvas id="tagsChart" style="max-height: 250px;"></canvas>
                     </div>
