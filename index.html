@@ -736,6 +736,8 @@
         let chatVisible = false;
         let unreadCount = 0;
         let firstChatLoad = true;
+        let chatMessagesData = [];
+        let lastProcessedMsgId = null;
 
         // ==================== CONTROL DE CARGA Y LECTOR QR (FIX) ====================
         let isAppReady = false;
@@ -770,7 +772,6 @@
                 setScreen('appPage'); 
                 showPage('dashboard');
                 processQR();
-                setupChatListener();
             }
         }
 
@@ -780,11 +781,10 @@
                 setScreen('appPage');
                 showPage('dashboard');
                 processQR();
-                setupChatListener();
             }
         }
 
-        // ==================== LÓGICA DEL CHAT INTERNO ====================
+        // ==================== LÓGICA DEL CHAT INTERNO (EN TIEMPO REAL) ====================
         function toggleChat() {
             chatVisible = !chatVisible;
             const win = document.getElementById('chatWindow');
@@ -812,53 +812,68 @@
                 timestamp: new Date().toISOString()
             };
 
+            input.value = ''; // Limpia inmediato
+
             try {
                 await db.collection('folders').doc('_GLOBAL_CHAT_').set({
+                    name: 'SYSTEM_CHAT',
+                    parentId: 'SYSTEM_HIDDEN',
                     messages: firebase.firestore.FieldValue.arrayUnion(msg)
                 }, { merge: true });
-                input.value = '';
-            } catch(err) { showToast('Error al enviar', 'error'); }
+            } catch(err) { 
+                showToast('Error al enviar. Revisa tu conexión.', 'error'); 
+                input.value = text; 
+            }
         }
 
-        function setupChatListener() {
-            db.collection('folders').doc('_GLOBAL_CHAT_').onSnapshot(doc => {
-                if (!doc.exists) return;
-                const data = doc.data();
-                let msgs = data.messages || [];
-                
-                if (msgs.length > 50) msgs = msgs.slice(msgs.length - 50);
-
-                const container = document.getElementById('chatMessages');
-                container.innerHTML = msgs.map(m => {
-                    const isMine = m.senderId === currentUser.uid;
-                    const dateObj = new Date(m.timestamp);
-                    const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    return `
-                        <div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-others'}">
-                            ${!isMine ? `<div style="font-weight:bold; font-size:0.7rem; margin-bottom:2px;">${escapeHtml(m.senderName)}</div>` : ''}
-                            <div>${escapeHtml(m.text)}</div>
-                            <div class="msg-info"><span>${timeStr}</span></div>
-                        </div>
-                    `;
-                }).join('');
-                if(chatVisible) container.scrollTop = container.scrollHeight;
-
-                if (!firstChatLoad && msgs.length > 0) {
-                    const lastMsg = msgs[msgs.length - 1];
-                    if (lastMsg.senderId !== currentUser.uid && lastMsg.id !== window.lastSeenMsgId) {
-                        window.lastSeenMsgId = lastMsg.id;
-                        if (!chatVisible) {
-                            unreadCount++;
-                            document.getElementById('chatBadge').textContent = unreadCount;
-                            document.getElementById('chatBadge').style.display = 'flex';
-                            showToast(`💬 Mensaje de ${lastMsg.senderName}`, 'info');
-                        }
-                    }
-                } else if(msgs.length > 0) {
-                    window.lastSeenMsgId = msgs[msgs.length - 1].id;
-                }
+        function processChatUpdates(msgs) {
+            if (!msgs || msgs.length === 0) {
                 firstChatLoad = false;
-            });
+                return;
+            }
+
+            const lastMsg = msgs[msgs.length - 1];
+
+            // Evitar re-renderizados innecesarios
+            if (lastProcessedMsgId === lastMsg.id && msgs.length === chatMessagesData.length) {
+                return; 
+            }
+
+            chatMessagesData = msgs;
+            if (chatMessagesData.length > 50) chatMessagesData = chatMessagesData.slice(chatMessagesData.length - 50);
+
+            renderMessages(chatMessagesData);
+
+            if (!firstChatLoad) {
+                if (lastMsg.senderId !== currentUser.uid && lastMsg.id !== lastProcessedMsgId) {
+                    if (!chatVisible) {
+                        unreadCount++;
+                        document.getElementById('chatBadge').textContent = unreadCount;
+                        document.getElementById('chatBadge').style.display = 'flex';
+                        showToast(`💬 Mensaje de ${lastMsg.senderName}`, 'info');
+                    }
+                }
+            }
+            
+            lastProcessedMsgId = lastMsg.id;
+            firstChatLoad = false;
+        }
+
+        function renderMessages(msgs) {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = msgs.map(m => {
+                const isMine = m.senderId === currentUser.uid;
+                const dateObj = new Date(m.timestamp);
+                const timeStr = dateObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                return `
+                    <div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-others'}">
+                        ${!isMine ? `<div style="font-weight:bold; font-size:0.7rem; margin-bottom:2px;">${escapeHtml(m.senderName)}</div>` : ''}
+                        <div>${escapeHtml(m.text)}</div>
+                        <div class="msg-info"><span>${timeStr}</span></div>
+                    </div>
+                `;
+            }).join('');
+            if (chatVisible) container.scrollTop = container.scrollHeight;
         }
 
         // ==================== FUNCIONES PUENTE ====================
@@ -1104,7 +1119,7 @@
 
             if(type === 'success') icon.innerHTML = '✅';
             else if(type === 'error') icon.innerHTML = '⚠️';
-            else if(type === 'info') icon.innerHTML = 'ℹ️';
+            else icon.innerHTML = 'ℹ️';
 
             clearTimeout(islandTimeout);
             islandTimeout = setTimeout(() => { island.classList.remove('show'); }, 4000);
@@ -1162,7 +1177,7 @@
             });
         }
 
-        // ==================== DATA LISTENERS & TICKER ====================
+        // ==================== DATA LISTENERS & TICKER & CHAT MAESTRO ====================
         function setupDataListeners() {
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
@@ -1174,15 +1189,25 @@
                 }
             }, err => { loadedCollections.users = true; if (!isAppReady) { checkAppReady(); } });
             
+            // EL MOTOR PRINCIPAL LO LEE TODO: CARPETAS, TICKER Y CHAT SIMULTÁNEAMENTE
             db.collection('folders').onSnapshot(s => { 
                 const allFolders = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
+                // 1. TICKER
                 const tickerDoc = allFolders.find(f => f.id === '_TICKER_SETTINGS_');
                 if (tickerDoc) { tickerData = { text: tickerDoc.text, active: tickerDoc.active }; } 
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                // FILTRO MAESTRO PARA QUE NO SALGAN CARPETAS DE SISTEMA EN LA APP
+                // 2. CHAT (Sincronización Perfecta)
+                const chatDoc = allFolders.find(f => f.id === '_GLOBAL_CHAT_');
+                if (chatDoc && chatDoc.messages) {
+                    processChatUpdates(chatDoc.messages);
+                } else if (!chatDoc) {
+                    firstChatLoad = false;
+                }
+
+                // 3. CARPETAS (Filtro Maestro)
                 foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_' && f.id !== '_GLOBAL_CHAT_');
 
                 loadedCollections.folders = true;
