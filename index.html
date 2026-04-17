@@ -110,6 +110,31 @@
         .fab-item::after { content: attr(data-tooltip); position: absolute; right: 55px; background: rgba(0,0,0,0.75); color: white; padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; font-weight: 500; white-space: nowrap; opacity: 0; pointer-events: none; transition: 0.2s; }
         .fab-item:hover::after { opacity: 1; }
 
+        /* 💬 CHAT iOS */
+        .chat-fab { position: fixed; bottom: 2rem; right: 6.5rem; width: 56px; height: 56px; border-radius: 50%; background: var(--white); color: var(--atm-blue); border: none; box-shadow: var(--shadow-lg); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 999; transition: 0.3s; }
+        .chat-fab:hover { transform: scale(1.1); }
+        .chat-badge { position: absolute; top: -5px; right: -5px; background: #ef4444; color: white; width: 22px; height: 22px; border-radius: 50%; font-size: 0.7rem; font-weight: bold; display: none; align-items: center; justify-content: center; border: 2px solid var(--white); }
+        body.dark-mode .chat-fab { background: var(--gray-800); color: white; border-color: rgba(255,255,255,0.1); }
+
+        .chat-window { position: fixed; bottom: 6.5rem; right: 2rem; width: 350px; height: 500px; background: var(--white); border-radius: 20px; box-shadow: var(--shadow-lg); z-index: 2000; display: none; flex-direction: column; overflow: hidden; animation: slideUp 0.3s ease; border: 1px solid var(--gray-200); }
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        body.dark-mode .chat-window { background: var(--gray-900); border-color: rgba(255,255,255,0.1); }
+        
+        .chat-header { background: var(--atm-blue); color: white; padding: 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+        .chat-messages { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; background: var(--gray-50); }
+        body.dark-mode .chat-messages { background: var(--gray-950); }
+        
+        .chat-input-area { padding: 1rem; border-top: 1px solid var(--gray-200); display: flex; gap: 0.5rem; background: var(--white); }
+        body.dark-mode .chat-input-area { background: var(--gray-900); border-top-color: rgba(255,255,255,0.05); }
+        .chat-input { flex: 1; padding: 0.75rem 1rem; border-radius: 99px; border: 1px solid var(--gray-200); outline: none; background: var(--gray-50); font-family: inherit; }
+        body.dark-mode .chat-input { background: var(--gray-800); color: white; border-color: transparent; }
+        
+        .msg-bubble { max-width: 80%; padding: 0.75rem 1rem; border-radius: 18px; font-size: 0.9rem; line-height: 1.4; position: relative; word-wrap: break-word; }
+        .msg-mine { align-self: flex-end; background: var(--atm-red); color: white; border-bottom-right-radius: 4px; }
+        .msg-others { align-self: flex-start; background: var(--gray-200); color: var(--gray-800); border-bottom-left-radius: 4px; }
+        body.dark-mode .msg-others { background: var(--gray-700); color: white; }
+        .msg-info { font-size: 0.65rem; margin-top: 0.3rem; opacity: 0.7; display: flex; justify-content: flex-end; }
+
         /* 📱 POPUP INSTALACIÓN VIP */
         .install-popup { position: fixed; bottom: -100%; left: 0; width: 100%; background: var(--white); padding: 2.5rem 2rem; border-top-left-radius: 24px; border-top-right-radius: 24px; box-shadow: 0 -10px 40px -5px rgba(0,0,0,0.2); z-index: 5000; transition: bottom 0.5s cubic-bezier(0.16, 1, 0.3, 1); text-align: center; }
         .install-popup.show { bottom: 0; }
@@ -324,6 +349,8 @@
             .content-area { padding: 1rem; }
             .users-table { display: block; overflow-x: auto; white-space: nowrap; }
             .session-footer { flex-direction: column; }
+            .chat-window { width: calc(100% - 2rem); right: 1rem; left: 1rem; height: 60vh; bottom: 6rem; }
+            .chat-fab { right: 5rem; }
         }
     </style>
 </head>
@@ -506,6 +533,25 @@
             </div>
         </div>
 
+        <button class="chat-fab" onclick="toggleChat()">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 1.821.484 3.53 1.33 5.01L2 22l5.19-1.45A9.95 9.95 0 0 0 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2z"/></svg>
+            <div class="chat-badge" id="chatBadge">0</div>
+        </button>
+
+        <div class="chat-window" id="chatWindow">
+            <div class="chat-header">
+                <span>Cuerpo Técnico Chat</span>
+                <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size:1.2rem;">✕</button>
+            </div>
+            <div class="chat-messages" id="chatMessages"></div>
+            <form class="chat-input-area" onsubmit="handleSendMessage(event)">
+                <input type="text" class="chat-input" id="chatInput" placeholder="Escribe un mensaje..." autocomplete="off" required>
+                <button type="submit" class="btn btn-primary" style="border-radius:50%; width:40px; height:40px; padding:0; display:flex; align-items:center; justify-content:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
+                </button>
+            </form>
+        </div>
+
     </div>
 
     <div class="install-popup" id="installPopup">
@@ -673,7 +719,7 @@
         let tickerData = { text: "", active: false };
         let deletingId = null, deletingType = null, editingUserId = null;
         let currentPage = 'dashboard'; 
-        let draggedFolderId = null; // FIX DEFINITIVO DRAG&DROP
+        let draggedFolderId = null; 
         
         let searchQuery = "", activeObjectiveFilter = null; 
         let currentViewMode = localStorage.getItem('atm_view_mode') || 'grid';
@@ -683,8 +729,13 @@
         let db, auth;
         let coachChartInstance = null, tagsChartInstance = null;
         let weatherInitialized = false; 
+        
+        // Variables Chat
+        let chatVisible = false;
+        let unreadCount = 0;
+        let firstChatLoad = true;
 
-        // ==================== CONTROL DE CARGA Y LECTOR QR (FIX) ====================
+        // ==================== CONTROL DE CARGA Y LECTOR QR ====================
         let isAppReady = false;
         let loadedCollections = { users: false, folders: false, sessions: false };
         
@@ -696,7 +747,6 @@
                 const session = sessionsData.find(x => x.id === viewId);
                 if(session) {
                     hasCheckedSharedLink = true;
-                    // Retraso estético para que no atropelle el desvanecimiento del splash
                     setTimeout(() => {
                         const btn = document.getElementById('openSharedSessionBtn');
                         btn.onclick = () => {
@@ -717,6 +767,7 @@
                 setScreen('appPage'); 
                 showPage('dashboard');
                 processQR();
+                setupChatListener(); // Iniciar Chat
             }
         }
 
@@ -726,7 +777,79 @@
                 setScreen('appPage');
                 showPage('dashboard');
                 processQR();
+                setupChatListener();
             }
+        }
+
+        // ==================== LÓGICA DEL CHAT ====================
+        function toggleChat() {
+            chatVisible = !chatVisible;
+            const win = document.getElementById('chatWindow');
+            win.style.display = chatVisible ? 'flex' : 'none';
+            if (chatVisible) {
+                unreadCount = 0;
+                document.getElementById('chatBadge').style.display = 'none';
+                const container = document.getElementById('chatMessages');
+                container.scrollTop = container.scrollHeight;
+                setTimeout(() => document.getElementById('chatInput').focus(), 100);
+            }
+        }
+
+        async function handleSendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text || !currentUserData) return;
+
+            try {
+                await db.collection('chat').add({
+                    text: text,
+                    senderId: currentUser.uid,
+                    senderName: currentUserData.fullName,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                input.value = '';
+            } catch(err) { showToast('Error al enviar mensaje', 'error'); }
+        }
+
+        function setupChatListener() {
+            db.collection('chat')
+              .orderBy('timestamp', 'asc')
+              .limitToLast(50)
+              .onSnapshot(s => {
+                const msgs = s.docs.map(d => d.data());
+                renderMessages(msgs);
+                
+                if (!firstChatLoad && s.docChanges().length > 0) {
+                    s.docChanges().forEach(change => {
+                        if (change.type === 'added' && change.doc.data().senderId !== currentUser.uid) {
+                            if (!chatVisible) {
+                                unreadCount++;
+                                document.getElementById('chatBadge').textContent = unreadCount;
+                                document.getElementById('chatBadge').style.display = 'flex';
+                                showToast(`💬 Mensaje de ${change.doc.data().senderName}`, 'info');
+                            }
+                        }
+                    });
+                }
+                firstChatLoad = false;
+            });
+        }
+
+        function renderMessages(msgs) {
+            const container = document.getElementById('chatMessages');
+            container.innerHTML = msgs.map(m => {
+                const isMine = m.senderId === currentUser.uid;
+                const time = m.timestamp ? m.timestamp.toDate().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '';
+                return `
+                    <div class="msg-bubble ${isMine ? 'msg-mine' : 'msg-others'}">
+                        ${!isMine ? `<div style="font-weight:bold; font-size:0.7rem; margin-bottom:2px;">${escapeHtml(m.senderName)}</div>` : ''}
+                        <div>${escapeHtml(m.text)}</div>
+                        <div class="msg-info"><span>${time}</span></div>
+                    </div>
+                `;
+            }).join('');
+            if (chatVisible) container.scrollTop = container.scrollHeight;
         }
 
         // ==================== FUNCIONES PUENTE ====================
@@ -753,7 +876,7 @@
             return html;
         }
 
-        // ==================== FORMULARIOS GLOBALES ====================
+        // ==================== FORMULARIOS GLOBALES A PRUEBA DE FALLOS ====================
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -1096,7 +1219,7 @@
             return false;
         }
 
-        // ==================== DRAG AND DROP (OPTIMIZADO) ====================
+        // ==================== DRAG AND DROP ====================
         function dragStart(e, id) { 
             window.isDragging = true; draggedFolderId = id; 
             e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', id); 
@@ -1131,12 +1254,12 @@
             const batch = db.batch();
             visible.forEach((f, idx) => { 
                 batch.update(db.collection('folders').doc(f.id), { order: idx }); 
-                f.order = idx; // Optimista para que no parpadee
+                f.order = idx; 
             });
             try { 
                 await batch.commit(); 
                 showToast('Carpetas ordenadas', 'success'); 
-                renderDashboard(); // Re-pintar inmediato
+                renderDashboard(); 
             } catch(err) { showToast('Error al ordenar', 'error'); }
         }
 
@@ -1468,6 +1591,7 @@
             }
 
             if (visibleFolders.length === 0 && visibleSessions.length === 0 && myFavorites.length === 0) html += `<div style="text-align:center; padding:3rem; color:var(--gray-400);">No se encontró ningún contenido.</div>`;
+            
             container.innerHTML = html;
         }
 
@@ -1667,7 +1791,6 @@
             content.innerHTML = html;
         }
 
-        // --- ÁRBOL RECURSIVO ---
         function renderAdminFolderTree(parentId = null, level = 0) {
             let html = '';
             const children = foldersData.filter(f => (f.parentId || null) === parentId && f.id !== '_TICKER_SETTINGS_');
@@ -1680,7 +1803,7 @@
                 
                 html += `
                 <div class="admin-folder-row" style="margin-left: ${indent}rem; ${!isRoot ? 'border-left: 3px solid var(--atm-red);' : ''}">
-                    <div class="admin-folder-info">
+                    <div style="display:flex; align-items:center; gap:1rem;">
                         <div class="folder-icon" style="color: ${isRoot ? 'var(--atm-blue)' : 'var(--gray-400)'}">
                             <svg viewBox="0 0 24 24" width="${isRoot ? '24' : '20'}" height="${isRoot ? '24' : '20'}" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
                         </div>
@@ -1710,7 +1833,7 @@
                 content.innerHTML = `<div class="empty-state" style="text-align:center; padding:2rem; color:var(--gray-500);"><h3>No hay carpetas creadas</h3></div>`; return;
             }
             
-            let html = `<div class="admin-folder-tree">`;
+            let html = `<div style="display:flex; flex-direction:column; gap:0.5rem;">`;
             html += renderAdminFolderTree(null, 0); 
             html += `</div>`;
             
@@ -1733,12 +1856,12 @@
                         <p style="font-size:2rem; font-weight:bold; color:var(--gray-800); margin-top:0.5rem;">${foldersData.filter(f => f.id !== '_TICKER_SETTINGS_').length}</p>
                     </div>
                 </div>
-                <div class="stats-grid">
-                    <div class="chart-container">
+                <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:1.5rem;">
+                    <div style="background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow);">
                         <h3 style="margin-bottom:1rem; font-size:1rem; color:var(--gray-700); text-align:center;">Archivos por Entrenador</h3>
                         <canvas id="coachChart" style="max-height: 250px;"></canvas>
                     </div>
-                    <div class="chart-container">
+                    <div style="background:var(--white); padding:1.5rem; border-radius:var(--radius); box-shadow:var(--shadow);">
                         <h3 style="margin-bottom:1rem; font-size:1rem; color:var(--gray-700); text-align:center;">Top Objetivos Principales</h3>
                         <canvas id="tagsChart" style="max-height: 250px;"></canvas>
                     </div>
