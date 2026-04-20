@@ -797,7 +797,6 @@
                 container.scrollTop = container.scrollHeight;
                 setTimeout(() => document.getElementById('chatInput').focus(), 100);
 
-                // Actualiza la memoria con el último mensaje al abrir
                 if (chatMessagesData && chatMessagesData.length > 0) {
                     lastSeenMsgId = chatMessagesData[chatMessagesData.length - 1].id;
                     localStorage.setItem('atm_last_seen_msg', lastSeenMsgId);
@@ -811,22 +810,17 @@
             const text = input.value.trim();
             if (!text || !currentUserData) return;
 
-            const msg = {
-                id: Date.now().toString() + Math.random().toString(36).substr(2,5),
-                text: text,
-                senderId: currentUser.uid,
-                senderName: currentUserData.fullName,
-                timestamp: new Date().toISOString()
-            };
-
             input.value = ''; 
 
             try {
-                await db.collection('folders').doc('_GLOBAL_CHAT_').set({
-                    name: 'SYSTEM_CHAT',
-                    parentId: 'SYSTEM_HIDDEN',
-                    messages: firebase.firestore.FieldValue.arrayUnion(msg)
-                }, { merge: true });
+                // Truco: Enviamos el mensaje como si fuera una carpeta con la bandera isChatMessage
+                await db.collection('folders').add({
+                    isChatMessage: true,
+                    text: text,
+                    senderId: currentUser.uid,
+                    senderName: currentUserData.fullName,
+                    timestamp: new Date().toISOString()
+                });
             } catch(err) { 
                 showToast('Error al enviar. Revisa tu conexión.', 'error'); 
                 input.value = text; 
@@ -839,7 +833,6 @@
                 return;
             }
 
-            // Evitar re-renderizados innecesarios
             if (lastProcessedMsgId === msgs[msgs.length - 1].id && msgs.length === chatMessagesData.length) {
                 return; 
             }
@@ -849,17 +842,13 @@
 
             renderMessages(chatMessagesData);
 
-            // LOGICA DEL BADGE TIPO WHATSAPP
             if (!chatVisible) {
                 let newUnread = 0;
                 if (!lastSeenMsgId) {
-                    // Si nunca ha leído, todos son nuevos
                     newUnread = chatMessagesData.filter(m => m.senderId !== currentUser.uid).length;
                 } else {
-                    // Contar desde el último visto
                     const lastSeenIndex = chatMessagesData.findIndex(m => m.id === lastSeenMsgId);
                     if (lastSeenIndex === -1) {
-                        // El mensaje es tan viejo que ya se borró del límite de 50
                         newUnread = chatMessagesData.filter(m => m.senderId !== currentUser.uid).length;
                     } else {
                         const unreadMsgs = chatMessagesData.slice(lastSeenIndex + 1);
@@ -873,13 +862,11 @@
                     document.getElementById('chatBadge').style.display = 'flex';
 
                     const lastMsg = chatMessagesData[chatMessagesData.length - 1];
-                    // Notificación en la Isla Dinámica solo para mensajes nuevos (no al cargar app)
                     if (!firstChatLoad && lastMsg.senderId !== currentUser.uid && lastMsg.id !== lastProcessedMsgId) {
                         showToast(`💬 Mensaje de ${lastMsg.senderName}`, 'info');
                     }
                 }
             } else {
-                // Si el chat ya está abierto, actualizamos la memoria al instante
                 lastSeenMsgId = chatMessagesData[chatMessagesData.length - 1].id;
                 localStorage.setItem('atm_last_seen_msg', lastSeenMsgId);
             }
@@ -929,7 +916,7 @@
             return html;
         }
 
-        // ==================== FORMULARIOS GLOBALES A PRUEBA DE FALLOS ====================
+        // ==================== FORMULARIOS GLOBALES ====================
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -1188,7 +1175,7 @@
                                     setScreen('loadingPage');
                                     window.listenersSetup = true;
                                     setupDataListeners();
-                                    setTimeout(triggerEmergencyStart, 6000); // FRENO EMERGENCIA
+                                    setTimeout(triggerEmergencyStart, 6000); 
                                 } else {
                                     if(isAppReady){
                                         setScreen('appPage');
@@ -1206,7 +1193,7 @@
             });
         }
 
-        // ==================== DATA LISTENERS & TICKER & CHAT MAESTRO ====================
+        // ==================== DATA LISTENERS ====================
         function setupDataListeners() {
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
@@ -1218,7 +1205,7 @@
                 }
             }, err => { loadedCollections.users = true; if (!isAppReady) { checkAppReady(); } });
             
-            // EL MOTOR PRINCIPAL LO LEE TODO: CARPETAS, TICKER Y CHAT SIMULTÁNEAMENTE
+            // EL MOTOR MAESTRO LEE CARPETAS Y CHAT
             db.collection('folders').onSnapshot(s => { 
                 const allFolders = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
@@ -1228,16 +1215,12 @@
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                // 2. CHAT (Sincronización Perfecta con Memoria)
-                const chatDoc = allFolders.find(f => f.id === '_GLOBAL_CHAT_');
-                if (chatDoc && chatDoc.messages) {
-                    processChatUpdates(chatDoc.messages);
-                } else if (!chatDoc) {
-                    firstChatLoad = false;
-                }
+                // 2. CHAT MESSAGES (Camuflados como carpetas)
+                const chatMsgs = allFolders.filter(f => f.isChatMessage).sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+                processChatUpdates(chatMsgs);
 
-                // 3. CARPETAS (Filtro Maestro)
-                foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_' && f.id !== '_GLOBAL_CHAT_');
+                // 3. CARPETAS REALES (Filtramos los chats y el ticker)
+                foldersData = allFolders.filter(f => !f.isChatMessage && f.id !== '_TICKER_SETTINGS_' && f.id !== '_GLOBAL_CHAT_');
 
                 loadedCollections.folders = true;
                 if (!isAppReady) { checkAppReady(); }
