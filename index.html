@@ -12,7 +12,7 @@
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,500;0,600;0,700;0,800;1,800&family=Open+Sans:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -53,7 +53,6 @@
         /* 🦴 SKELETON LOADING (SPLASH HÍBRIDO PREMIUM) */
         .loading-container { align-items: flex-start; justify-content: flex-start; background: var(--gray-100); flex-direction: row; padding: 0; overflow: hidden; position: relative;}
         
-        /* Efecto Shimmer de Luz Líquida */
         .skeleton { 
             background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
             background-size: 400% 100%;
@@ -69,11 +68,10 @@
         .animate-entry { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         @keyframes floatShield { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         
-        /* Contenedor del Escudo Latiendo */
         .splash-logo-container {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(243, 244, 246, 0.65); /* Cristal esmerilado */
+            background: rgba(243, 244, 246, 0.65);
             backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
             z-index: 10;
         }
@@ -120,7 +118,7 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         body.dark-mode .chat-window { background: var(--gray-900); border-color: rgba(255,255,255,0.1); }
         
-        .chat-header { background: var(--atm-blue); color: white; padding: 1rem; display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
+        .chat-header { background: var(--atm-blue); color: white; padding: 1.2rem; display: flex; align-items: center; justify-content: space-between; }
         .chat-messages { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; background: var(--gray-50); }
         body.dark-mode .chat-messages { background: var(--gray-950); }
         
@@ -542,8 +540,16 @@
 
         <div class="chat-window" id="chatWindow">
             <div class="chat-header">
-                <span>Cuerpo Técnico Chat</span>
-                <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size:1.2rem;">✕</button>
+                <div style="display:flex; align-items:center; gap:0.75rem;">
+                    <div style="width: 38px; height: 38px; border-radius: 50%; background: rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; flex-shrink:0;">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                    </div>
+                    <div>
+                        <div style="font-family: 'Montserrat', sans-serif; font-weight: 800; font-style: italic; font-size: 1.05rem; line-height: 1.1; letter-spacing: 0.5px; text-transform: uppercase;">CHAT DEPARTAMENTO<br>PORTEROS</div>
+                        <div style="font-size: 0.75rem; color: #60a5fa; margin-top: 2px;">En línea</div>
+                    </div>
+                </div>
+                <button onclick="toggleChat()" style="background:none; border:none; color:white; cursor:pointer; font-size:1.5rem; align-self: flex-start; padding: 0;">✕</button>
             </div>
             <div class="chat-messages" id="chatMessages"></div>
             <form class="chat-input-area" onsubmit="handleSendMessage(event)">
@@ -738,7 +744,6 @@
         let firstChatLoad = true;
         let chatMessagesData = [];
         let lastProcessedMsgId = null;
-        // Memoria de vestuario (localStorage)
         let lastSeenMsgId = localStorage.getItem('atm_last_seen_msg') || null;
 
         // ==================== CONTROL DE CARGA Y LECTOR QR ====================
@@ -813,12 +818,14 @@
             input.value = ''; 
 
             try {
-                // Truco: Enviamos el mensaje como si fuera una carpeta con la bandera isChatMessage
-                await db.collection('folders').add({
+                // Truco maestro: Guardamos el mensaje en "sessions" que SÍ tiene permiso el entrenador
+                await db.collection('sessions').add({
                     isChatMessage: true,
                     text: text,
                     senderId: currentUser.uid,
+                    uploadedBy: currentUser.uid, // Asegura el permiso de Firebase
                     senderName: currentUserData.fullName,
+                    uploadDate: new Date().toISOString(), // Orden cronológico general
                     timestamp: new Date().toISOString()
                 });
             } catch(err) { 
@@ -997,7 +1004,7 @@
             }
         }
 
-        // ==================== INSTALACIÓN VIP (PWA POPUP) ====================
+        // ==================== INSTALACIÓN VIP ====================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); deferredPrompt = e;
@@ -1193,7 +1200,7 @@
             });
         }
 
-        // ==================== DATA LISTENERS ====================
+        // ==================== DATA LISTENERS & TICKER ====================
         function setupDataListeners() {
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
@@ -1205,22 +1212,16 @@
                 }
             }, err => { loadedCollections.users = true; if (!isAppReady) { checkAppReady(); } });
             
-            // EL MOTOR MAESTRO LEE CARPETAS Y CHAT
+            // CARPETAS Y TICKER (SIN EL CHAT AQUI DENTRO)
             db.collection('folders').onSnapshot(s => { 
                 const allFolders = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
-                // 1. TICKER
                 const tickerDoc = allFolders.find(f => f.id === '_TICKER_SETTINGS_');
                 if (tickerDoc) { tickerData = { text: tickerDoc.text, active: tickerDoc.active }; } 
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                // 2. CHAT MESSAGES (Camuflados como carpetas)
-                const chatMsgs = allFolders.filter(f => f.isChatMessage).sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
-                processChatUpdates(chatMsgs);
-
-                // 3. CARPETAS REALES (Filtramos los chats y el ticker)
-                foldersData = allFolders.filter(f => !f.isChatMessage && f.id !== '_TICKER_SETTINGS_' && f.id !== '_GLOBAL_CHAT_');
+                foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_');
 
                 loadedCollections.folders = true;
                 if (!isAppReady) { checkAppReady(); }
@@ -1235,9 +1236,18 @@
                 }
             }, err => { loadedCollections.folders = true; if (!isAppReady) { checkAppReady(); } });
 
+            // EL MOTOR DE SESIONES LEE SESIONES Y EL CHAT CAMUFLADO EN TIEMPO REAL
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
-                sessionsData = s.docs.map(d => ({id:d.id, ...d.data()})); 
+                const allDocs = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
+                // Extraer mensajes de Chat
+                const rawChatMsgs = allDocs.filter(d => d.isChatMessage);
+                rawChatMsgs.reverse(); // Invertir para que el más viejo salga arriba y el nuevo abajo
+                processChatUpdates(rawChatMsgs);
+
+                // Extraer Sesiones Reales
+                sessionsData = allDocs.filter(d => !d.isChatMessage);
+
                 loadedCollections.sessions = true;
                 if (!isAppReady) { checkAppReady(); }
                 else {
