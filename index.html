@@ -602,7 +602,7 @@
         </div>
     </div>
     
-    <!-- 📄 MODAL: RECEPTOR DE ENLACE COMPARTIDO -->
+    <!-- 📄 MODAL: RECEPTOR ENLACE COMPARTIDO -->
     <div class="modal" id="sharedSessionModal" style="z-index: 10000;">
         <div class="modal-overlay" onclick="closeModal('sharedSessionModal')"></div>
         <div class="modal-content" style="max-width: 400px; text-align:center;">
@@ -700,22 +700,27 @@
         </div>
     </div>
 
-    <div class="modal" id="changeTrainerModal">
-        <div class="modal-overlay" onclick="closeModal('changeTrainerModal')"></div>
+    <!-- ✏️ NUEVO MODAL: EDITAR CARPETA ADMINISTRADOR -->
+    <div class="modal" id="editFolderAdminModal">
+        <div class="modal-overlay" onclick="closeModal('editFolderAdminModal')"></div>
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Cambiar Entrenador</h3>
-                <button class="modal-close" onclick="closeModal('changeTrainerModal')">✕</button>
+                <h3>Editar Carpeta</h3>
+                <button class="modal-close" onclick="closeModal('editFolderAdminModal')">✕</button>
             </div>
-            <form id="changeTrainerForm" style="padding: 1.5rem;" onsubmit="handleChangeTrainerSubmit(event)">
-                <input type="hidden" id="changeTrainerFolderId">
+            <form id="editFolderAdminForm" style="padding: 1.5rem;" onsubmit="handleEditFolderAdminSubmit(event)">
+                <input type="hidden" id="editAdminFolderId">
                 <div class="form-group">
-                    <label>Seleccionar Nuevo Entrenador</label>
-                    <select id="newTrainerSelect" required></select>
+                    <label>Nombre de la Carpeta</label>
+                    <input type="text" id="editAdminFolderName" required>
+                </div>
+                <div class="form-group">
+                    <label>Asignar Entrenador</label>
+                    <select id="editAdminFolderTrainer"></select>
                 </div>
                 <div style="display:flex; justify-content:flex-end; gap:1rem; margin-top:2rem;">
-                    <button type="button" class="btn btn-secondary" onclick="closeModal('changeTrainerModal')">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editFolderAdminModal')">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 </div>
             </form>
         </div>
@@ -764,7 +769,6 @@
         let firstChatLoad = true;
         let chatMessagesData = [];
         let lastProcessedMsgId = null;
-        // Memoria de vestuario (localStorage)
         let lastSeenMsgId = localStorage.getItem('atm_last_seen_msg') || null;
 
         // ==================== CONTROL DE CARGA Y LECTOR QR ====================
@@ -847,7 +851,6 @@
                     senderName: currentUserData.fullName,
                     uploadDate: new Date().toISOString(), 
                     timestamp: new Date().toISOString(),
-                    // Campos para saltar reglas de seguridad
                     title: "Mensaje Interno", 
                     folderId: "SYSTEM_CHAT",
                     originalName: "chat.txt",
@@ -1022,16 +1025,6 @@
             finally { btn.disabled = false; }
         }
 
-        async function handleChangeTrainerSubmit(e) {
-            e.preventDefault();
-            try {
-                await db.collection('folders').doc(document.getElementById('changeTrainerFolderId').value).update({ userId: document.getElementById('newTrainerSelect').value || null });
-                showToast('Entrenador actualizado', 'success'); closeModal('changeTrainerModal');
-            } catch(err) {
-                showToast('Error al actualizar entrenador', 'error');
-            }
-        }
-
         // ==================== INSTALACIÓN VIP ====================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
@@ -1192,7 +1185,7 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // ==================== AUTH & DATA LISTENERS (CON ANTI-CRASHEO) ====================
+        // ==================== AUTH & DATA LISTENERS ====================
         function setupAuthListener() {
             auth.onAuthStateChanged(async user => {
                 if (user) {
@@ -1229,7 +1222,6 @@
         }
 
         function setupDataListeners() {
-            // Escucha de Usuarios (Protegida)
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 loadedCollections.users = true;
@@ -1239,12 +1231,11 @@
                     else if(currentPage === 'admin') renderAdmin();
                 }
             }, err => { 
-                console.warn("Permiso de usuarios limitado (normal para entrenadores).");
+                console.warn("Aviso de lectura (usuarios):", err);
                 loadedCollections.users = true; 
                 if (!isAppReady) checkAppReady(); 
             });
             
-            // Escucha de Carpetas (Protegida)
             db.collection('folders').onSnapshot(s => { 
                 const allFolders = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
@@ -1253,7 +1244,7 @@
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_');
+                foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_' && f.id !== '_GLOBAL_CHAT_');
 
                 loadedCollections.folders = true;
                 if (!isAppReady) { checkAppReady(); }
@@ -1267,12 +1258,11 @@
                     }
                 }
             }, err => { 
-                console.error("Error en carpetas:", err);
+                console.warn("Aviso de lectura (carpetas):", err);
                 loadedCollections.folders = true; 
                 if (!isAppReady) checkAppReady(); 
             });
 
-            // Escucha de Sesiones y Chat (Protegida)
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 const allDocs = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
@@ -1290,7 +1280,7 @@
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderStatsTab(); 
                 }
             }, err => { 
-                console.error("Error en tiempo real de sesiones/chat:", err);
+                console.warn("Aviso de lectura (sesiones):", err);
                 loadedCollections.sessions = true; 
                 if (!isAppReady) checkAppReady(); 
             });
@@ -1888,16 +1878,92 @@
             content.innerHTML = html;
         }
 
+        // ==================== EDICIÓN Y MOVIMIENTO DE CARPETAS (NUEVO) ====================
+        async function moveFolderAdmin(id, direction) {
+            const folder = foldersData.find(f => f.id === id);
+            if (!folder) return;
+
+            const siblings = foldersData.filter(f => f.parentId === folder.parentId);
+            siblings.sort((a, b) => (a.order || 0) - (b.order || 0));
+
+            const idx = siblings.findIndex(f => f.id === id);
+            if (idx === -1) return;
+
+            try {
+                if (direction === 'up' && idx > 0) {
+                    const prev = siblings[idx - 1];
+                    const tempOrder = folder.order || 0;
+                    folder.order = prev.order || 0;
+                    prev.order = tempOrder;
+                    
+                    const batch = db.batch();
+                    batch.update(db.collection('folders').doc(folder.id), { order: folder.order });
+                    batch.update(db.collection('folders').doc(prev.id), { order: prev.order });
+                    await batch.commit();
+
+                } else if (direction === 'down' && idx < siblings.length - 1) {
+                    const next = siblings[idx + 1];
+                    const tempOrder = folder.order || 0;
+                    folder.order = next.order || 0;
+                    next.order = tempOrder;
+
+                    const batch = db.batch();
+                    batch.update(db.collection('folders').doc(folder.id), { order: folder.order });
+                    batch.update(db.collection('folders').doc(next.id), { order: next.order });
+                    await batch.commit();
+                }
+            } catch (err) {
+                showToast('Error al mover carpeta', 'error');
+            }
+        }
+
+        function openEditAdminFolderModal(id, currentName, currentUserId) {
+            document.getElementById('editAdminFolderId').value = id;
+            document.getElementById('editAdminFolderName').value = currentName || '';
+
+            let selectHtml = `<option value="">Sin asignar</option>`;
+            usersData.filter(u => u.role === 'coach').forEach(u => {
+                selectHtml += `<option value="${u.id}" ${u.id === currentUserId ? 'selected' : ''}>${escapeHtml(u.fullName)}</option>`;
+            });
+            document.getElementById('editAdminFolderTrainer').innerHTML = selectHtml;
+
+            openModal('editFolderAdminModal');
+        }
+
+        async function handleEditFolderAdminSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('editAdminFolderId').value;
+            const newName = document.getElementById('editAdminFolderName').value.trim();
+            const newUserId = document.getElementById('editAdminFolderTrainer').value || null;
+
+            try {
+                await db.collection('folders').doc(id).update({
+                    name: newName,
+                    userId: newUserId
+                });
+                showToast('Carpeta actualizada', 'success');
+                closeModal('editFolderAdminModal');
+            } catch (err) {
+                showToast('Error al actualizar: ' + err.message, 'error');
+            }
+        }
+
         // --- ÁRBOL RECURSIVO ---
         function renderAdminFolderTree(parentId = null, level = 0) {
             let html = '';
             const children = foldersData.filter(f => (f.parentId || null) === parentId);
             children.sort((a, b) => (a.order || 0) - (b.order || 0));
 
-            children.forEach(f => {
+            children.forEach((f, index) => {
                 const assignedUser = usersData.find(u => u.id === f.userId);
                 const indent = level * 2.5; 
                 const isRoot = level === 0;
+
+                const isFirst = index === 0;
+                const isLast = index === children.length - 1;
+                
+                const safeName = f.name.replace(/'/g, "\\'");
+                const safeUserId = f.userId || '';
                 
                 html += `
                 <div class="admin-folder-row" style="margin-left: ${indent}rem; ${!isRoot ? 'border-left: 3px solid var(--atm-red);' : ''}">
@@ -1913,7 +1979,9 @@
                         </div>
                     </div>
                     <div class="action-buttons">
-                        <button class="btn btn-secondary btn-icon-action" onclick="showChangeTrainerModal('${f.id}')" title="Cambiar entrenador">✏️</button>
+                        <button class="btn btn-secondary btn-icon-action" ${isFirst ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : `onclick="moveFolderAdmin('${f.id}', 'up')"`} title="Subir">⬆️</button>
+                        <button class="btn btn-secondary btn-icon-action" ${isLast ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : `onclick="moveFolderAdmin('${f.id}', 'down')"`} title="Bajar">⬇️</button>
+                        <button class="btn btn-secondary btn-icon-action" onclick="openEditAdminFolderModal('${f.id}', '${safeName}', '${safeUserId}')" title="Editar">✏️</button>
                         <button class="btn btn-primary btn-icon-action" style="background:var(--atm-red); color:white;" onclick="confirmDelete('${f.id}', 'folder')" title="Eliminar">🗑️</button>
                     </div>
                 </div>`;
@@ -2057,13 +2125,7 @@
 
         function editUser(id) { openUserModal(id); }
 
-        function showChangeTrainerModal(id) {
-            document.getElementById('changeTrainerFolderId').value = id;
-            document.getElementById('newTrainerSelect').innerHTML = `<option value="">Sin asignar</option>` + usersData.filter(u=>u.role==='coach').map(u => `<option value="${u.id}">${escapeHtml(u.fullName)}</option>`).join('');
-            openModal('changeTrainerModal');
-        }
-
-        // ==================== SOLUCIÓN DEL BOTÓN ELIMINAR ====================
+        // ==================== SOLUCIÓN DEL BOTÓN ELIMINAR BLINDADO ====================
         function confirmDelete(id, type) { 
             deletingId = id; 
             deletingType = type; 
@@ -2079,11 +2141,12 @@
                 if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
                 else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
                 else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
-                closeModal('deleteModal'); 
                 showToast('Eliminado correctamente', 'success');
             } catch(e) { 
-                showToast('Error al eliminar (Permisos denegados)', 'error'); 
+                console.error("Error Firebase:", e);
+                showToast('Error de conexión. ¿Tienes alguna extensión bloqueando?', 'error'); 
             } finally {
+                closeModal('deleteModal'); 
                 if(btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
                 deletingId = null; 
                 deletingType = null;
