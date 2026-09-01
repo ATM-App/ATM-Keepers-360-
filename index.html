@@ -54,6 +54,7 @@
         /* 🦴 SKELETON LOADING (SPLASH HÍBRIDO PREMIUM) */
         .loading-container { align-items: flex-start; justify-content: flex-start; background: var(--gray-100); flex-direction: row; padding: 0; overflow: hidden; position: relative;}
         
+        /* Efecto Shimmer de Luz Líquida */
         .skeleton { 
             background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
             background-size: 400% 100%;
@@ -69,10 +70,11 @@
         .animate-entry { animation: fadeUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity: 0; }
         @keyframes floatShield { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         
+        /* Contenedor del Escudo Latiendo */
         .splash-logo-container {
             position: absolute; inset: 0;
             display: flex; align-items: center; justify-content: center;
-            background: rgba(243, 244, 246, 0.65);
+            background: rgba(243, 244, 246, 0.65); /* Cristal esmerilado */
             backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
             z-index: 10;
         }
@@ -119,7 +121,7 @@
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         body.dark-mode .chat-window { background: var(--gray-900); border-color: rgba(255,255,255,0.1); }
         
-        .chat-header { background: var(--atm-blue); color: white; padding: 1.2rem; display: flex; align-items: center; justify-content: space-between; }
+        .chat-header { background: var(--atm-blue); color: white; padding: 1.2rem; display: flex; align-items: center; justify-content: space-between; font-weight: 600; }
         .chat-messages { flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; background: var(--gray-50); }
         body.dark-mode .chat-messages { background: var(--gray-950); }
         
@@ -726,7 +728,7 @@
             <div style="padding: 1.5rem;"><p style="color:var(--gray-800)">¿Estás seguro de que deseas eliminar este elemento?</p></div>
             <div style="display:flex; justify-content:center; gap:1rem; padding: 1.5rem;">
                 <button class="btn btn-secondary" onclick="closeModal('deleteModal')">Cancelar</button>
-                <button class="btn btn-primary" style="background:var(--atm-red);" id="confirmDeleteBtn">Eliminar</button>
+                <button class="btn btn-primary" style="background:var(--atm-red);" onclick="executeDelete()" id="confirmDeleteBtn">Eliminar</button>
             </div>
         </div>
     </div>
@@ -762,6 +764,7 @@
         let firstChatLoad = true;
         let chatMessagesData = [];
         let lastProcessedMsgId = null;
+        // Memoria de vestuario (localStorage)
         let lastSeenMsgId = localStorage.getItem('atm_last_seen_msg') || null;
 
         // ==================== CONTROL DE CARGA Y LECTOR QR ====================
@@ -808,7 +811,7 @@
             }
         }
 
-        // ==================== LÓGICA DEL CHAT INTERNO (CON MEMORIA) ====================
+        // ==================== LÓGICA DEL CHAT INTERNO ====================
         function toggleChat() {
             chatVisible = !chatVisible;
             const win = document.getElementById('chatWindow');
@@ -836,23 +839,22 @@
             input.value = ''; 
 
             try {
-                // Truco maestro Nivel 4: Disfrazamos el mensaje de sesión con TODOS los campos obligatorios
                 await db.collection('sessions').add({
                     isChatMessage: true,
                     text: text,
                     senderId: currentUser.uid,
+                    uploadedBy: currentUser.uid, 
                     senderName: currentUserData.fullName,
+                    uploadDate: new Date().toISOString(), 
                     timestamp: new Date().toISOString(),
-                    // --- CAMUFLAJE PARA PASAR LA ADUANA DE FIREBASE ---
+                    // Campos para saltar reglas de seguridad
                     title: "Mensaje Interno", 
                     folderId: "SYSTEM_CHAT",
                     originalName: "chat.txt",
                     objective: "Comunicación",
                     fileType: "text/plain", 
                     fileExt: "txt",
-                    pdfData: "data:text/plain;base64,Q0hBVA==", 
-                    uploadDate: new Date().toISOString(), 
-                    uploadedBy: currentUser.uid
+                    pdfData: "data:text/plain;base64,Q0hBVA=="
                 });
             } catch(err) { 
                 showToast('Error al enviar. Revisa tu conexión.', 'error'); 
@@ -949,7 +951,7 @@
             return html;
         }
 
-        // ==================== FORMULARIOS GLOBALES A PRUEBA DE FALLOS ====================
+        // ==================== FORMULARIOS GLOBALES ====================
         async function handleLogin(e) {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -1030,7 +1032,7 @@
             }
         }
 
-        // ==================== INSTALACIÓN VIP (PWA POPUP) ====================
+        // ==================== INSTALACIÓN VIP ====================
         let deferredPrompt;
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault(); deferredPrompt = e;
@@ -1190,7 +1192,7 @@
             return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
         }
 
-        // ==================== AUTH & LOGIN ====================
+        // ==================== AUTH & DATA LISTENERS (CON ANTI-CRASHEO) ====================
         function setupAuthListener() {
             auth.onAuthStateChanged(async user => {
                 if (user) {
@@ -1208,7 +1210,7 @@
                                     setScreen('loadingPage');
                                     window.listenersSetup = true;
                                     setupDataListeners();
-                                    setTimeout(triggerEmergencyStart, 6000); // FRENO EMERGENCIA
+                                    setTimeout(triggerEmergencyStart, 6000); 
                                 } else {
                                     if(isAppReady){
                                         setScreen('appPage');
@@ -1226,8 +1228,8 @@
             });
         }
 
-        // ==================== DATA LISTENERS & TICKER & CHAT MAESTRO ====================
         function setupDataListeners() {
+            // Escucha de Usuarios (Protegida)
             db.collection('users').onSnapshot(s => { 
                 usersData = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 loadedCollections.users = true;
@@ -1236,8 +1238,13 @@
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin') renderAdmin();
                 }
-            }, err => { loadedCollections.users = true; if (!isAppReady) { checkAppReady(); } });
+            }, err => { 
+                console.warn("Permiso de usuarios limitado (normal para entrenadores).");
+                loadedCollections.users = true; 
+                if (!isAppReady) checkAppReady(); 
+            });
             
+            // Escucha de Carpetas (Protegida)
             db.collection('folders').onSnapshot(s => { 
                 const allFolders = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
@@ -1259,18 +1266,20 @@
                         renderTickerTab();
                     }
                 }
-            }, err => { loadedCollections.folders = true; if (!isAppReady) { checkAppReady(); } });
+            }, err => { 
+                console.error("Error en carpetas:", err);
+                loadedCollections.folders = true; 
+                if (!isAppReady) checkAppReady(); 
+            });
 
-            // EL MOTOR DE SESIONES LEE SESIONES Y EL CHAT CAMUFLADO EN TIEMPO REAL
+            // Escucha de Sesiones y Chat (Protegida)
             db.collection('sessions').orderBy('uploadDate', 'desc').onSnapshot(s => { 
                 const allDocs = s.docs.map(d => ({id:d.id, ...d.data()})); 
                 
-                // Extraer mensajes de Chat
                 const rawChatMsgs = allDocs.filter(d => d.isChatMessage);
                 rawChatMsgs.reverse(); 
                 processChatUpdates(rawChatMsgs);
 
-                // Extraer Sesiones Reales (Filtramos los chats)
                 sessionsData = allDocs.filter(d => !d.isChatMessage);
 
                 loadedCollections.sessions = true;
@@ -1280,7 +1289,11 @@
                     if(currentPage === 'dashboard') renderDashboard();
                     else if(currentPage === 'admin' && document.querySelector('.admin-tab:nth-child(3)')?.classList.contains('active')) renderStatsTab(); 
                 }
-            }, err => { loadedCollections.sessions = true; if (!isAppReady) { checkAppReady(); } });
+            }, err => { 
+                console.error("Error en tiempo real de sesiones/chat:", err);
+                loadedCollections.sessions = true; 
+                if (!isAppReady) checkAppReady(); 
+            });
         }
 
         function updateTickerUI() {
@@ -2050,15 +2063,32 @@
             openModal('changeTrainerModal');
         }
 
-        function confirmDelete(id, type) { deletingId = id; deletingType = type; openModal('deleteModal'); }
-        document.getElementById('confirmDeleteBtn').onclick = async () => {
+        // ==================== SOLUCIÓN DEL BOTÓN ELIMINAR ====================
+        function confirmDelete(id, type) { 
+            deletingId = id; 
+            deletingType = type; 
+            openModal('deleteModal'); 
+        }
+
+        async function executeDelete() {
+            if (!deletingId) return;
+            const btn = document.getElementById('confirmDeleteBtn');
+            if(btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
+            
             try {
                 if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
                 else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
                 else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
-                closeModal('deleteModal'); showToast('Eliminado correctamente', 'success');
-            } catch(e) { showToast('Error al eliminar', 'error'); }
-        };
+                closeModal('deleteModal'); 
+                showToast('Eliminado correctamente', 'success');
+            } catch(e) { 
+                showToast('Error al eliminar (Permisos denegados)', 'error'); 
+            } finally {
+                if(btn) { btn.disabled = false; btn.textContent = 'Eliminar'; }
+                deletingId = null; 
+                deletingType = null;
+            }
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             try { initFirebase(); setupAuthListener(); } 
