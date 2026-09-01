@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="ATM Keepers 360 - Plataforma de Entrenadores">
+    <meta name="description" content="ATM VISIÓN+ - Session Panel">
     <meta name="theme-color" content="#CB3524">
-    <title>ATM Keepers 360</title>
+    <title>ATM VISIÓN+</title>
     <!-- Activamos el manifest y los iconos de instalación -->
     <link rel="manifest" href="manifest.json">
     <link rel="icon" href="icono.png" type="image/png">
@@ -73,7 +73,7 @@
         /* Contenedor del Escudo Latiendo */
         .splash-logo-container {
             position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem;
             background: rgba(243, 244, 246, 0.65); /* Cristal esmerilado */
             backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
             z-index: 10;
@@ -421,6 +421,7 @@
             <!-- CAPA SUPERIOR: ESCUDO LATIENTE -->
             <div class="splash-logo-container">
                 <img src="escudo.png" alt="Cargando..." class="splash-logo" onerror="this.style.display='none'">
+                <p style="color: var(--atm-blue); font-family: 'Montserrat', sans-serif; font-weight: 700; font-size: 1.2rem;">ATM VISIÓN+</p>
             </div>
         </div>
     </div>
@@ -430,8 +431,8 @@
         <div class="login-card">
             <div class="login-header">
                 <img src="escudo.png" alt="ATM" class="logo-escudo" onerror="this.outerHTML='<div style=\'width:120px;height:120px;border-radius:12px;background:var(--atm-red);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;\'><span style=\'font-size:48px;font-weight:bold;color:white;\'>ATM</span></div>'">
-                <h1>ATM Keepers 360</h1>
-                <p class="subtitle">Plataforma de Entrenadores de Porteros</p>
+                <h1>ATM VISIÓN+</h1>
+                <p class="subtitle">Session Panel</p>
             </div>
             <form id="loginForm" onsubmit="handleLogin(event)">
                 <div class="form-group">
@@ -460,7 +461,7 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <img src="escudo.png" alt="Escudo" class="sidebar-logo">
-                <h2>ATM Keepers 360</h2>
+                <h2>ATM VISIÓN+</h2>
             </div>
             <nav class="sidebar-nav">
                 <a href="javascript:void(0)" class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
@@ -508,7 +509,7 @@
                 </button>
                 <div class="header-title" style="flex-direction: column;">
                     <h1 id="pageTitle">Sesiones de Entrenamiento</h1>
-                    <p id="pageSubtitle">Explora y gestiona las carpetas del equipo</p>
+                    <p id="pageSubtitle">Session Panel</p>
                     <div id="weatherWidget" class="weather-widget" style="display:none;">
                         <span>📍 Buscando ubicación...</span>
                     </div>
@@ -579,7 +580,7 @@
     <!-- 📱 POPUP INSTALACIÓN VIP -->
     <div class="install-popup" id="installPopup">
         <img src="escudo.png" alt="Escudo" class="install-logo">
-        <h3 class="install-title">Instala ATM Keepers 360</h3>
+        <h3 class="install-title">Instala ATM VISIÓN+</h3>
         <p class="install-desc">Añade la plataforma a la pantalla de inicio de tu dispositivo para usarla a pantalla completa, sin distracciones y con el máximo rendimiento en el campo.</p>
         <div class="install-actions">
             <button class="btn btn-primary btn-block" style="padding: 1rem; font-size: 1.05rem;" onclick="installApp()">Añadir a Pantalla de Inicio</button>
@@ -602,7 +603,7 @@
         </div>
     </div>
     
-    <!-- 📄 MODAL: RECEPTOR ENLACE COMPARTIDO -->
+    <!-- 📄 MODAL: RECEPTOR DE ENLACE COMPARTIDO -->
     <div class="modal" id="sharedSessionModal" style="z-index: 10000;">
         <div class="modal-overlay" onclick="closeModal('sharedSessionModal')"></div>
         <div class="modal-content" style="max-width: 400px; text-align:center;">
@@ -769,6 +770,7 @@
         let firstChatLoad = true;
         let chatMessagesData = [];
         let lastProcessedMsgId = null;
+        // Memoria de vestuario (localStorage)
         let lastSeenMsgId = localStorage.getItem('atm_last_seen_msg') || null;
 
         // ==================== CONTROL DE CARGA Y LECTOR QR ====================
@@ -815,7 +817,7 @@
             }
         }
 
-        // ==================== LÓGICA DEL CHAT INTERNO ====================
+        // ==================== LÓGICA DEL CHAT INTERNO (CON MEMORIA) ====================
         function toggleChat() {
             chatVisible = !chatVisible;
             const win = document.getElementById('chatWindow');
@@ -1244,7 +1246,7 @@
                 else { tickerData = { text: '', active: false }; }
                 updateTickerUI();
 
-                foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_' && f.id !== '_GLOBAL_CHAT_');
+                foldersData = allFolders.filter(f => f.id !== '_TICKER_SETTINGS_');
 
                 loadedCollections.folders = true;
                 if (!isAppReady) { checkAppReady(); }
@@ -1354,26 +1356,28 @@
         async function shareWhatsApp(id) {
             const s = sessionsData.find(x => x.id === id);
             if (!s) return;
-            const ext = s.fileExt || 'pdf';
-            const filename = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
             
-            if (s.pdfData) {
-                try {
-                    const mimeType = s.fileType || 'application/pdf';
-                    const byteString = atob(s.pdfData.split(',')[1]);
-                    const ab = new ArrayBuffer(byteString.length); const ia = new Uint8Array(ab);
-                    for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
-                    const blob = new Blob([ab], { type: mimeType });
-                    const file = new File([blob], filename, { type: mimeType });
+            try {
+                const fullData = await getFullFileData(s);
+                const text = `⚽ Sesión ATM VISIÓN+: ${s.title}`;
+                
+                // Si es demasiado grande, el navegador podría fallar al crear el archivo. Lo protegemos:
+                const ext = s.fileExt || 'pdf';
+                const filename = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
+                const mimeType = s.fileType || 'application/pdf';
+                const byteString = atob(fullData.split(',')[1]);
+                const ab = new ArrayBuffer(byteString.length); const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) { ia[i] = byteString.charCodeAt(i); }
+                const blob = new Blob([ab], { type: mimeType });
+                const file = new File([blob], filename, { type: mimeType });
 
-                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                        await navigator.share({ files: [file], title: s.title, text: '⚽ Sesión ATM Keepers 360: ' + s.title });
-                        showToast('Archivo preparado para enviar', 'success');
-                    } else { showToast('Para compartir directo usa un móvil o tablet. En PC, usa "Descargar".', 'error'); }
-                } catch(e) {
-                    if (e.name !== 'AbortError') showToast('Error al compartir. Usa la opción de Descargar.', 'error');
-                }
-            } else { showToast('Error leyendo archivo.', 'error'); }
+                if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: s.title, text: text });
+                    showToast('Archivo preparado para enviar', 'success');
+                } else { showToast('Para compartir directo usa un móvil o tablet. En PC, usa "Descargar".', 'error'); }
+            } catch(e) {
+                if (e.name !== 'AbortError') showToast('Error al compartir. Usa la opción de Descargar.', 'error');
+            }
         }
 
         function openQRModal(id) {
@@ -1386,16 +1390,34 @@
             }
         }
 
-        function viewFile(id) { 
+        async function getFullFileData(s) {
+            if (s.isChunked) {
+                showToast('Preparando archivo grande...', 'info');
+                try {
+                    const snap = await db.collection('sessions').doc(s.id).collection('chunks').get();
+                    const chunks = snap.docs.map(d => ({ id: parseInt(d.id), data: d.data().data }));
+                    chunks.sort((a, b) => a.id - b.id);
+                    return chunks.map(c => c.data).join('');
+                } catch (err) {
+                    throw new Error("No se pudieron cargar todos los fragmentos.");
+                }
+            }
+            return s.pdfData;
+        }
+
+        async function viewFile(id) { 
             const s = sessionsData.find(x => x.id === id); 
-            if (s && s.pdfData) {
+            if (!s) return;
+            
+            try {
+                const fullData = await getFullFileData(s);
                 const ext = s.fileExt || (s.originalName ? s.originalName.split('.').pop().toLowerCase() : 'pdf');
                 let mimeType = s.fileType || 'application/pdf';
                 if (!s.fileType) {
                     if (ext === 'ppt') mimeType = 'application/vnd.ms-powerpoint';
                     if (ext === 'pptx') mimeType = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
                 }
-                const blob = new Blob([Uint8Array.from(atob(s.pdfData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
+                const blob = new Blob([Uint8Array.from(atob(fullData.split(',')[1]), c => c.charCodeAt(0))], {type: mimeType});
                 const url = URL.createObjectURL(blob);
 
                 const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
@@ -1405,16 +1427,22 @@
                     document.getElementById('pdfIframe').src = url;
                     openModal('pdfModal');
                 } else { window.location.href = url; }
+            } catch (e) {
+                showToast('Error cargando archivo', 'error');
             }
         }
 
-        function downloadFile(id) {
+        async function downloadFile(id) {
             const s = sessionsData.find(x => x.id === id);
-            if (s && s.pdfData) {
-                const link = document.createElement('a'); link.href = s.pdfData; 
+            if (!s) return;
+            try {
+                const fullData = await getFullFileData(s);
+                const link = document.createElement('a'); link.href = fullData; 
                 const ext = s.fileExt || 'pdf';
                 link.download = s.originalName || (s.title.replace(/ /g, '_') + '.' + ext);
                 document.body.appendChild(link); link.click(); document.body.removeChild(link);
+            } catch (e) {
+                showToast('Error al descargar archivo', 'error');
             }
         }
 
@@ -1455,7 +1483,7 @@
 
             if (p === 'dashboard') {
                 updateHeaderGreeting(); initWeatherWidget();    
-                document.getElementById('pageSubtitle').textContent = 'Explora y gestiona las carpetas del equipo';
+                document.getElementById('pageSubtitle').textContent = 'Session Panel';
                 
                 dynActions.innerHTML = `
                     <div class="view-toggle-container">
@@ -1614,6 +1642,39 @@
                     html += `</div>`;
                 }
 
+                // 1. CARPETAS (SIEMPRE ARRIBA)
+                visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
+                visibleFolders.sort((a, b) => {
+                    const orderA = a.order !== undefined ? a.order : 9999;
+                    const orderB = b.order !== undefined ? b.order : 9999;
+                    return orderA - orderB;
+                });
+
+                if (visibleFolders.length > 0) {
+                    if (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeObjectiveFilter) {
+                        html += `<p style="font-size:0.85rem; color:var(--gray-500); margin-bottom: 1rem;">💡 Puedes arrastrar y soltar las carpetas para cambiar su orden.</p>`;
+                    }
+                    html += `<div class="folders-grid">`;
+                    visibleFolders.forEach((f, idx) => {
+                        const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
+                        const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
+                        
+                        const dragProps = (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeObjectiveFilter) ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="dragEnd(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
+                        const animDelay = idx * 0.05;
+                        
+                        html += `
+                        <div class="folder-card animate-entry" style="animation-delay: ${animDelay}s;" onclick="if(!window.isDragging) navigateToFolder('${f.id}')" ${dragProps}>
+                            <div class="folder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
+                            <div style="flex:1; pointer-events: none;">
+                                <div class="folder-name">${escapeHtml(f.name)}</div>
+                                <div style="font-size:0.8rem; color:var(--gray-500); margin-top:0.2rem;">${subCount} subcarpetas • ${sessCount} archivos</div>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                }
+
+                // 2. FAVORITOS Y RECIENTES (DEBAJO DE LAS CARPETAS)
                 if (currentFolderId === null) {
                     const favSessions = sessionsData.filter(s => isFolderAllowed(s.folderId) && myFavorites.includes(s.id));
                     if (favSessions.length > 0) {
@@ -1635,41 +1696,11 @@
                         html += `</div><hr style="border:none; border-top:1px solid var(--gray-200); margin-bottom:2rem;">`;
                     }
                 }
-
-                visibleFolders = foldersData.filter(f => (f.parentId || null) === currentFolderId && isFolderAllowed(f.id));
-                visibleFolders.sort((a, b) => {
-                    const orderA = a.order !== undefined ? a.order : 9999;
-                    const orderB = b.order !== undefined ? b.order : 9999;
-                    return orderA - orderB;
-                });
                 
                 visibleSessions = sessionsData.filter(s => (s.folderId || null) === currentFolderId && (currentFolderId !== null || !myFavorites.includes(s.id)));
             }
 
-            if (visibleFolders.length > 0) {
-                if (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeObjectiveFilter) {
-                    html += `<p style="font-size:0.85rem; color:var(--gray-500); margin-bottom: 1rem;">💡 Puedes arrastrar y soltar las carpetas para cambiar su orden.</p>`;
-                }
-                html += `<div class="folders-grid">`;
-                visibleFolders.forEach((f, idx) => {
-                    const subCount = foldersData.filter(sub => sub.parentId === f.id).length;
-                    const sessCount = sessionsData.filter(s => s.folderId === f.id).length;
-                    
-                    const dragProps = (currentUserData?.role === 'admin' && searchQuery.length === 0 && !activeObjectiveFilter) ? `draggable="true" ondragstart="dragStart(event, '${f.id}')" ondragend="dragEnd(event)" ondragover="dragOver(event)" ondragleave="dragLeave(event)" ondrop="drop(event, '${f.id}')"` : '';
-                    const animDelay = idx * 0.05;
-                    
-                    html += `
-                    <div class="folder-card animate-entry" style="animation-delay: ${animDelay}s;" onclick="if(!window.isDragging) navigateToFolder('${f.id}')" ${dragProps}>
-                        <div class="folder-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg></div>
-                        <div style="flex:1; pointer-events: none;">
-                            <div class="folder-name">${escapeHtml(f.name)}</div>
-                            <div style="font-size:0.8rem; color:var(--gray-500); margin-top:0.2rem;">${subCount} subcarpetas • ${sessCount} archivos</div>
-                        </div>
-                    </div>`;
-                });
-                html += `</div>`;
-            }
-
+            // 3. ARCHIVOS GUARDADOS
             if (visibleSessions.length > 0) {
                 html += `<h3 style="margin-bottom:1rem; font-size:1.1rem; color:var(--gray-700)">Archivos Guardados</h3>`;
                 html += `<div class="${currentViewMode === 'list' ? 'sessions-list' : 'sessions-grid'}">`;
@@ -1682,7 +1713,7 @@
             container.innerHTML = html;
         }
 
-        // ==================== FORMULARIOS DE SUBIDA ====================
+        // ==================== FORMULARIOS DE SUBIDA (ACTUALIZADO A CHUNKS HACK) ====================
         function renderUpload() {
             const allowed = foldersData.filter(f => isFolderAllowed(f.id));
             
@@ -1715,7 +1746,7 @@
                         </div>
 
                         <div class="form-group">
-                            <label>Archivo (máx 1MB - Límite de Base de Datos)</label>
+                            <label>Archivo (máx 15MB - Tecnología Fragmentada)</label>
                             <div class="dropzone">
                                 <input type="file" id="upFile" required onchange="handleFileSelect(event)">
                                 <div id="dropzoneContent">
@@ -1740,38 +1771,63 @@
                     </form>
                 </div>`;
             
-            document.getElementById('upForm').onsubmit = e => {
+            document.getElementById('upForm').onsubmit = async e => {
                 e.preventDefault();
-                const file = document.getElementById('upFile').files[0], btn = document.getElementById('upBtn');
+                const file = document.getElementById('upFile').files[0];
+                const btn = document.getElementById('upBtn');
                 
-                if (file.size > 1048576) {
-                    return showToast("El archivo supera 1MB (Límite estricto de base de datos)", "error");
+                // Límite ampliado a 15 MB
+                if (file.size > 15728640) {
+                    return showToast("El archivo supera los 15MB. Comprímelo.", "error");
                 }
 
-                btn.disabled = true; btn.textContent = "Subiendo...";
+                btn.disabled = true; 
+                btn.textContent = "Procesando... (esto puede tardar unos segundos)";
                 const objectiveVal = document.getElementById('upObjective').value.trim();
 
                 const reader = new FileReader();
                 reader.readAsDataURL(file);
                 
-                reader.onload = () => {
-                    db.collection('sessions').add({
-                        title: document.getElementById('upTitle').value, 
-                        folderId: document.getElementById('upFolder').value,
-                        originalName: file.name,
-                        objective: objectiveVal,
-                        fileType: file.type, 
-                        fileExt: file.name.split('.').pop().toLowerCase(),
-                        pdfData: reader.result, 
-                        uploadDate: new Date().toISOString(), 
-                        uploadedBy: currentUser.uid
-                    }).then(() => { 
-                        showToast('Archivo guardado', 'success'); 
+                reader.onload = async () => {
+                    try {
+                        const base64Data = reader.result;
+                        const chunkSize = 800000; // 800KB aprox por trozo (por debajo del 1MB de límite)
+                        const chunks = [];
+                        
+                        for (let i = 0; i < base64Data.length; i += chunkSize) {
+                            chunks.push(base64Data.substring(i, i + chunkSize));
+                        }
+
+                        // 1. Guardar metadatos en documento principal
+                        const docRef = await db.collection('sessions').add({
+                            title: document.getElementById('upTitle').value, 
+                            folderId: document.getElementById('upFolder').value,
+                            originalName: file.name,
+                            objective: objectiveVal,
+                            fileType: file.type, 
+                            fileExt: file.name.split('.').pop().toLowerCase(),
+                            isChunked: true, // Avisamos que está troceado
+                            chunkCount: chunks.length,
+                            uploadDate: new Date().toISOString(), 
+                            uploadedBy: currentUser.uid
+                        });
+
+                        // 2. Guardar los pedazos en una subcolección por lotes
+                        const batch = db.batch();
+                        chunks.forEach((chunkData, index) => {
+                            const chunkRef = db.collection('sessions').doc(docRef.id).collection('chunks').doc(index.toString());
+                            batch.set(chunkRef, { data: chunkData });
+                        });
+                        
+                        await batch.commit();
+
+                        showToast('Archivo guardado exitosamente', 'success'); 
                         showPage('dashboard'); 
-                    }).catch(error => {
+                    } catch(error) {
                         showToast("Error al subir: " + error.message, "error");
+                    } finally {
                         btn.disabled = false; btn.textContent = "Subir Archivo";
-                    });
+                    }
                 };
             };
         }
@@ -2138,9 +2194,22 @@
             if(btn) { btn.disabled = true; btn.textContent = 'Eliminando...'; }
             
             try {
-                if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
+                // Si estamos eliminando una sesión pesada (con chunks), limpiamos la basura primero
+                if (deletingType === 'session') {
+                    const s = sessionsData.find(x => x.id === deletingId);
+                    if (s && s.isChunked) {
+                        try {
+                            const chunksSnap = await db.collection('sessions').doc(deletingId).collection('chunks').get();
+                            const batch = db.batch();
+                            chunksSnap.docs.forEach(d => batch.delete(d.ref));
+                            await batch.commit();
+                        } catch(e) {} // Ignoramos si falla la limpieza, lo importante es borrar el archivo padre
+                    }
+                    await db.collection('sessions').doc(deletingId).delete();
+                }
+                else if (deletingType === 'user') await db.collection('users').doc(deletingId).delete();
                 else if (deletingType === 'folder') await db.collection('folders').doc(deletingId).delete();
-                else if (deletingType === 'session') await db.collection('sessions').doc(deletingId).delete();
+                
                 showToast('Eliminado correctamente', 'success');
             } catch(e) { 
                 console.error("Error Firebase:", e);
